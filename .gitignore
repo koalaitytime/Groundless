@@ -1,0 +1,21 @@
+# Godot 4
+.godot/
+/groundless/android/
+*.translation
+export_presets.cfg
+/build/
+/export/
+
+# Blender autosaves and backups
+*.blend1
+*.blend2
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+*.tmp
+
+# Claude local settings
+.claude/settings.local.json
