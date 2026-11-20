@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/raft.tscn" id="2_raft"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="Script" path="res://scripts/sky_debris.gd" id="4_debris"]
+[ext_resource type="Script" path="res://scripts/drift_pod_spawner.gd" id="5_spawner"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.2, 0.14, 0.36, 1)
@@ -27,6 +28,7 @@ fog_sky_affect = 0.35
 
 [sub_resource type="StandardMaterial3D" id="mat_murk"]
 shading_mode = 0
+cull_mode = 2
 albedo_color = Color(0.07, 0.09, 0.2, 1)
 
 [sub_resource type="PlaneMesh" id="mesh_murk"]
@@ -46,18 +48,22 @@ light_energy = 1.2
 shadow_enabled = true
 
 [node name="Raft" parent="." instance=ExtResource("2_raft")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 100, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 37, 0)
 
 [node name="Player" parent="." node_paths=PackedStringArray("home") instance=ExtResource("3_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 100.5, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 37.5, 1)
 home = NodePath("../Raft")
 
 [node name="SkyDebris" type="Node3D" parent="." node_paths=PackedStringArray("follow")]
 script = ExtResource("4_debris")
 follow = NodePath("../Raft")
 
+[node name="DriftPods" type="Node3D" parent="." node_paths=PackedStringArray("raft")]
+script = ExtResource("5_spawner")
+raft = NodePath("../Raft")
+
 [node name="Murk" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 25, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
 mesh = SubResource("mesh_murk")
 
 [node name="Debug" type="CanvasLayer" parent="."]
@@ -65,6 +71,46 @@ mesh = SubResource("mesh_murk")
 [node name="Label" type="Label" parent="Debug"]
 offset_left = 12.0
 offset_top = 10.0
-offset_right = 400.0
-offset_bottom = 160.0
+offset_right = 420.0
+offset_bottom = 260.0
 text = "debug"
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="Crosshair" type="Label" parent="Hud"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -10.0
+offset_top = -14.0
+offset_right = 10.0
+offset_bottom = 14.0
+text = "·"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Prompt" type="Label" parent="Hud"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = 30.0
+offset_right = 250.0
+offset_bottom = 90.0
+horizontal_alignment = 1
+
+[node name="Carried" type="Label" parent="Hud"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -44.0
+offset_right = -16.0
+offset_bottom = -16.0
+horizontal_alignment = 2

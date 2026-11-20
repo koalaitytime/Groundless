@@ -25,6 +25,9 @@ A floating-raft survival game in Godot 4.7 (GDScript, Forward+, Jolt Physics). T
 - **Raft is an AnimatableBody3D moved by script** (`scripts/raft.gd`). The player rides it by applying the raft's per-tick transform change itself (`scripts/player.gd`); the engine's platform velocity is off (`platform_floor_layers = 0`). Anything rideable joins the `rideable` group and must move before the player (lower `process_physics_priority`).
 - **Recentring** is the `WorldOrigin` autoload: top-level nodes in the `recentre` group are shifted back on X/Z when the raft passes `threshold`. Never shift Y. Cache global positions only if you listen to `WorldOrigin.recentred`.
 - **Wind** is the `Wind` autoload: `Wind.velocity_at(height)`.
+- **Tuning numbers** all live in the `Tuning` autoload (`scripts/tuning.gd`), seeded from `groundless/docs/early-design-numbers.md`. Never hard-code a gameplay number elsewhere.
+- **Lift** is `RaftLift` (the raft's `Lift` child): resting height = clamp((lift - weight) x metres_per_kg, murk_floor, ceiling). Y = 0 is the murk's top. Things that weigh something call `RaftLift.find(self).add_weight()`.
+- **Physics layers:** 1 world, 2 pods (drift-pods, hit by the hook), 3 interact (`Interactable` areas the look ray finds).
 - Build work happens locally on Andrew's PC, never in the cloud.
 
 ## Tests
@@ -34,6 +37,8 @@ Run from `groundless/` (exit code 0 = pass):
 ```
 C:\Users\aluck\Downloads\Godot_v4.7.2-stable_win64_console.exe --headless --fixed-fps 60 res://tests/ride_test.tscn
 ```
+
+`res://tests/lift_test.tscn` is the milestone 2 check (lift, weight, controls, murk, hook, drift-pod spawning).
 
 `tests/ride_test.tscn` is the milestone 1 check: standing, walking, jumping and walking off the edge on an exaggerated drifting, turning, swaying raft with frequent recentres. Rerun it after touching the raft, player or recentring.
 
@@ -48,6 +53,8 @@ Defined in `project.godot` (physical keys):
 | `interact` | E |
 | `hotbar_1` … `hotbar_9` | 1 … 9 |
 | `hotbar_next` / `hotbar_prev` | Mouse wheel down / up |
+| `sprint` | Shift |
+| `use_primary` | Left mouse (throw the hook) |
 
 Also: Esc frees the mouse, click recaptures it, F3 toggles the debug readout.
 

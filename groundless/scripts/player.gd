@@ -9,11 +9,11 @@ extends CharacterBody3D
 ## A body is rideable if it is in the "rideable" group and moves before the player each tick
 ## (lower process_physics_priority).
 
-@export var walk_speed := 4.0
 @export var ground_acceleration := 30.0
 @export var air_acceleration := 6.0
-@export var jump_velocity := 4.5
 @export var mouse_sensitivity := 0.0025
+## How far the player can reach to use things, in metres.
+@export var reach := 2.6
 ## Keep riding while airborne if a rideable body is within this distance below.
 @export var air_ride_distance := 30.0
 ## Placeholder for the falling-off rule: respawn when this far below the raft.
@@ -26,6 +26,12 @@ extends CharacterBody3D
 var input_override: Variant = null
 var jump_override := false
 
+## Drift-pods caught and not yet used.
+var held_pods := 0
+## The interactable the player is looking at, or null.
+var focused: Interactable
+var hook: Hook
+
 ## The body the player is riding, or null.
 var ride_body: Node3D
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -34,12 +40,15 @@ var _ride_previous := Transform3D.IDENTITY
 var _ride_velocity := Vector3.ZERO
 
 @onready var head: Node3D = $Head
+@onready var camera: Camera3D = $Head/Camera3D
 
 
 func _ready() -> void:
 	platform_floor_layers = 0
 	add_to_group("recentre")
 	WorldOrigin.recentred.connect(_on_recentred)
+	hook = Hook.new()
+	add_child(hook)
 	if DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -51,8 +60,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		head.rotation.x = clampf(head.rotation.x, deg_to_rad(-89.0), deg_to_rad(89.0))
 	elif event.is_action_pressed("ui_cancel"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	elif event is InputEventMouseButton and event.pressed:
+	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("use_primary"):
+		throw_hook()
+	elif event.is_action_pressed("interact") and focused:
+		focused.interact(self)
 
 
 func _physics_process(delta: float) -> void:
@@ -65,14 +79,15 @@ func _physics_process(delta: float) -> void:
 		input_dir = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var wish := global_basis * Vector3(input_dir.x, 0.0, input_dir.y)
 	wish.y = 0.0
-	wish = wish.normalized() * walk_speed * minf(input_dir.length(), 1.0)
+	var speed := Tuning.sprint_speed if Input.is_action_pressed("sprint") else Tuning.walk_speed
+	wish = wish.normalized() * speed * minf(input_dir.length(), 1.0)
 
 	var wants_jump := jump_override or Input.is_action_just_pressed("jump")
 	jump_override = false
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 	elif wants_jump:
-		velocity.y = jump_velocity
+		velocity.y = sqrt(2.0 * gravity * Tuning.jump_height)
 
 	var accel := ground_acceleration if is_on_floor() else air_acceleration
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z).move_toward(wish, accel * delta)
@@ -82,6 +97,20 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_ride()
 	_check_fall()
+	_update_focus()
+
+
+func throw_hook() -> void:
+	hook.throw(-camera.global_basis.z, _ride_velocity if ride_body else Vector3.ZERO)
+
+
+## Find what the player is looking at within reach.
+func _update_focus() -> void:
+	var from := camera.global_position
+	var query := PhysicsRayQueryParameters3D.create(from, from - camera.global_basis.z * reach, 1 | Interactable.LAYER, [get_rid()])
+	query.collide_with_areas = true
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	focused = hit.collider as Interactable if not hit.is_empty() else null
 
 
 ## Apply the ridden body's motion since last tick to the player.

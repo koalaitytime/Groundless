@@ -1,6 +1,11 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/raft.gd" id="1_raft"]
+[ext_resource type="Script" path="res://scripts/raft_lift.gd" id="2_lift"]
+[ext_resource type="Script" path="res://scripts/anchor_point.gd" id="3_anchor"]
+[ext_resource type="Script" path="res://scripts/vent_cord.gd" id="4_vent"]
+[ext_resource type="Script" path="res://scripts/sandbag.gd" id="5_sandbag"]
+[ext_resource type="Script" path="res://scripts/altitude_dial.gd" id="6_dial"]
 
 [sub_resource type="StandardMaterial3D" id="mat_slab"]
 albedo_color = Color(0.46, 0.45, 0.48, 1)
@@ -43,3 +48,38 @@ mesh = SubResource("mesh_rock")
 [node name="RockShape" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3, 0.175, -1.3)
 shape = SubResource("shape_rock")
+
+[node name="Lift" type="Node" parent="."]
+script = ExtResource("2_lift")
+
+[node name="AnchorBackLeft" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.85, 0, -1.85)
+script = ExtResource("3_anchor")
+start_capacity = 80.0
+
+[node name="AnchorBackRight" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.85, 0, -1.85)
+script = ExtResource("3_anchor")
+start_capacity = 80.0
+
+[node name="AnchorFrontLeft" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.85, 0, 1.85)
+script = ExtResource("3_anchor")
+start_capacity = 80.0
+start_damaged = true
+
+[node name="AnchorFrontRight" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.85, 0, 1.85)
+script = ExtResource("3_anchor")
+
+[node name="VentCord" type="Area3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1.95, 0, -0.2)
+script = ExtResource("4_vent")
+
+[node name="AltitudeDial" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2.05, 0, 0.8)
+script = ExtResource("6_dial")
+
+[node name="Sandbag" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 0.4)
+script = ExtResource("5_sandbag")
