@@ -92,6 +92,11 @@ func _fly(delta: float) -> void:
 		if item and not item.hooked:
 			hooked_item = item
 			item.hooked = true
+		elif hit.collider is Island:
+			# Hooked an island: tie the raft to it.
+			var anchor := _player.home.get_node_or_null("Anchor") as RaftAnchor if _player.home else null
+			if anchor and not anchor.is_anchored():
+				anchor.anchor_to(hit.collider, hit.position)
 		state = State.REELING
 		return
 	global_position = next

@@ -68,6 +68,25 @@ func _touches_floor(tile: Vector2i) -> bool:
 	return false
 
 
+## How far the raft's floor reaches from its centre in a raft-local horizontal direction.
+func extent_along(local_dir: Vector3) -> float:
+	var d := Vector3(local_dir.x, 0.0, local_dir.z).normalized()
+	var half := Tuning.tile_size * 0.5
+	var best := 0.0
+	for tile in tiles:
+		var c := tile_centre(tile)
+		best = maxf(best, c.dot(d) + half * (absf(d.x) + absf(d.z)))
+	return best
+
+
+## Radius of a circle around the raft's centre that covers all its floor.
+func bounding_radius() -> float:
+	var best := 0.0
+	for tile in tiles:
+		best = maxf(best, tile_centre(tile).length())
+	return best + Tuning.tile_size * 0.7072
+
+
 ## The tile the camera is aiming at on the deck plane, or null if out of reach.
 func aim_tile(camera: Camera3D) -> Variant:
 	var to_local := raft.global_transform.affine_inverse()

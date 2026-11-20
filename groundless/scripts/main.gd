@@ -20,11 +20,28 @@ const FOG_COLOUR_MURK := Color(0.08, 0.1, 0.22)
 @onready var build_menu: BuildMenu = $Hud/BuildMenu
 
 
+@onready var message_label: Label = $Hud/Message
+
+var _message_time := 0.0
+
+
 func _ready() -> void:
+	add_to_group("hud")
 	build_menu.player = player
 
 
-func _process(_delta: float) -> void:
+## Show a message (a note, the ending) in the middle of the screen for a while.
+func show_message(text: String, seconds := 8.0) -> void:
+	message_label.text = text
+	message_label.modulate.a = 1.0
+	_message_time = seconds
+
+
+func _process(delta: float) -> void:
+	if _message_time > 0.0:
+		_message_time -= delta
+		message_label.modulate.a = clampf(_message_time, 0.0, 1.0)
+
 	# The murk is a big plane that follows the raft on X/Z.
 	murk.global_position.x = raft.global_position.x
 	murk.global_position.z = raft.global_position.z
@@ -44,7 +61,7 @@ func _process(_delta: float) -> void:
 		var pod_lines := ""
 		for pod in lift.pods():
 			pod_lines += "  pod %d kg  gas %d%%%s\n" % [pod.capacity, roundi(pod.gas * 100.0), "  wilting" if pod.damaged else ""]
-		debug_label.text = "FPS %d\nHeight %.1f m  resting %.1f m  vy %.2f m/s%s\nLift %.1f kg  weight %.1f kg  surplus %.1f kg\n%sWind %.2f m/s heading %d°  drift %.2f m/s\nRaft absolute X %.0f Z %.0f\nRiding %s  On floor %s" % [
+		debug_label.text = "FPS %d\nHeight %.1f m  resting %.1f m  vy %.2f m/s%s\nLift %.1f kg  weight %.1f kg  surplus %.1f kg\n%sWind %.2f m/s heading %d°  drift %.2f m/s\nRaft absolute X %.0f Z %.0f\nRiding %s  On floor %s%s%s" % [
 			Engine.get_frames_per_second(),
 			raft.get_base_height(),
 			lift.get_resting_height(),
@@ -61,7 +78,17 @@ func _process(_delta: float) -> void:
 			absolute.z,
 			"yes" if player.ride_body != null else "no",
 			"yes" if player.is_on_floor() else "no",
+			"  ANCHORED" if raft.get_node("Anchor").is_anchored() else "",
+			_island_debug(),
 		]
+
+
+func _island_debug() -> String:
+	var islands: IslandSpawner = $Islands
+	if islands.current == null:
+		return "\nNext island soon (%s)" % islands.next_kind()
+	var to := islands.current.global_position - raft.global_position
+	return "\nIsland %s: %.0f m away, lip %+.1f m%s" % [islands.current.kind, Vector2(to.x, to.z).length(), to.y, "  visited" if islands.current.visited else ""]
 
 
 func _prompt_text() -> String:

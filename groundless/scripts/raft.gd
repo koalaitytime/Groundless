@@ -18,6 +18,9 @@ extends AnimatableBody3D
 
 ## Current drift velocity in m/s (bob not included). Y is the vertical speed.
 var velocity := Vector3.ZERO
+## Set by the Anchor child while anchored: the horizontal velocity to follow instead of
+## the wind. null when not anchored.
+var anchor_velocity: Variant = null
 
 var _time := 0.0
 var _paddle_target := Vector3.ZERO
@@ -43,7 +46,11 @@ func _physics_process(delta: float) -> void:
 
 	# Horizontal: ease toward a fraction of the wind (the raft is heavy).
 	var wind: Vector3 = Wind.velocity_at(_base_position.y) * Tuning.raft_wind_fraction
-	var horizontal := Vector3(velocity.x, 0.0, velocity.z).lerp(wind, 1.0 - exp(-drift_response * delta))
+	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
+	if anchor_velocity != null:
+		horizontal = horizontal.lerp(anchor_velocity, 1.0 - exp(-2.0 * delta))
+	else:
+		horizontal = horizontal.lerp(wind, 1.0 - exp(-drift_response * delta))
 
 	# Vertical: vy target = clamp((target - y) / T, -max_sink, +max_rise), smoothed.
 	var desired_vy := clampf(
@@ -56,6 +63,7 @@ func _physics_process(delta: float) -> void:
 	_paddle_velocity = _paddle_velocity.lerp(_paddle_target, 1.0 - exp(-2.0 * delta))
 	_paddle_target = Vector3.ZERO
 	_base_position += (velocity + _paddle_velocity) * delta
+	_keep_clear_of_islands()
 
 	_yaw += deg_to_rad(turn_degrees_per_second) * sin(_time * 0.05) * delta
 
@@ -78,6 +86,30 @@ func paddle(direction: Vector3) -> void:
 ## Total horizontal velocity including paddling.
 func get_horizontal_velocity() -> Vector3:
 	return Vector3(velocity.x + _paddle_velocity.x, 0.0, velocity.z + _paddle_velocity.z)
+
+
+## The raft is moved by script, so nothing stops it passing through an island. Instead,
+## if its footprint overlaps an island at its height, slide it out to the island's edge and
+## drop the velocity that points into the island.
+func _keep_clear_of_islands() -> void:
+	var build := get_node_or_null("Build") as RaftBuilder
+	for node in get_tree().get_nodes_in_group("island"):
+		var island := node as Island
+		var r := island.radius_at(_base_position.y + 0.4)
+		if r <= 0.0:
+			continue
+		var away := Vector3(_base_position.x - island.global_position.x, 0.0, _base_position.z - island.global_position.z)
+		var distance := away.length()
+		var normal := away.normalized() if distance > 0.01 else Vector3.RIGHT
+		# How far the raft's floor reaches toward the island.
+		var reach := build.extent_along(global_basis.inverse() * -normal) if build else 2.25
+		var need := r + reach
+		if distance >= need:
+			continue
+		_base_position += normal * (need - distance)
+		var into := velocity.dot(-normal)
+		if into > 0.0:
+			velocity += normal * into
 
 
 ## Height without the bob.

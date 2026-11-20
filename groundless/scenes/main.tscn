@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/sky_debris.gd" id="4_debris"]
 [ext_resource type="Script" path="res://scripts/flotsam_spawner.gd" id="5_spawner"]
 [ext_resource type="Script" path="res://scripts/build_menu.gd" id="6_menu"]
+[ext_resource type="Script" path="res://scripts/island_spawner.gd" id="7_islands"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.2, 0.14, 0.36, 1)
@@ -62,6 +63,11 @@ follow = NodePath("../Raft")
 [node name="Flotsam" type="Node3D" parent="." node_paths=PackedStringArray("raft")]
 script = ExtResource("5_spawner")
 raft = NodePath("../Raft")
+
+[node name="Islands" type="Node3D" parent="." node_paths=PackedStringArray("raft", "player")]
+script = ExtResource("7_islands")
+raft = NodePath("../Raft")
+player = NodePath("../Player")
 
 [node name="Murk" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
@@ -130,3 +136,14 @@ horizontal_alignment = 1
 
 [node name="BuildMenu" type="PanelContainer" parent="Hud"]
 script = ExtResource("6_menu")
+
+[node name="Message" type="Label" parent="Hud"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -380.0
+offset_top = 90.0
+offset_right = 380.0
+offset_bottom = 260.0
+horizontal_alignment = 1
+autowrap_mode = 3

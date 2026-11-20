@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/sandbag.gd" id="5_sandbag"]
 [ext_resource type="Script" path="res://scripts/altitude_dial.gd" id="6_dial"]
 [ext_resource type="Script" path="res://scripts/raft_builder.gd" id="7_build"]
+[ext_resource type="Script" path="res://scripts/raft_anchor.gd" id="8_anchor"]
 
 [sub_resource type="StandardMaterial3D" id="mat_slab"]
 albedo_color = Color(0.46, 0.45, 0.48, 1)
@@ -87,3 +88,6 @@ script = ExtResource("5_sandbag")
 
 [node name="Build" type="Node" parent="."]
 script = ExtResource("7_build")
+
+[node name="Anchor" type="Node" parent="."]
+script = ExtResource("8_anchor")

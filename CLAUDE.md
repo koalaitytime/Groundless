@@ -29,6 +29,9 @@ A floating-raft survival game in Godot 4.7 (GDScript, Forward+, Jolt Physics). T
 - **Lift** is `RaftLift` (the raft's `Lift` child): resting height = clamp((lift - weight) x metres_per_kg, murk_floor, ceiling). Y = 0 is the murk's top. Things that weigh something call `RaftLift.find(self).add_weight()`.
 - **Physics layers:** 1 world, 2 flotsam (drift-pods and material bundles, hit by the hook), 3 interact (`Interactable` areas the look ray finds).
 - **Building** is `RaftBuilder` (the raft's `Build` child): a grid of `Tuning.tile_size` tiles in raft-local X/Z; the slab is tiles -1..1. Plank and roof collision shapes go directly on the raft body. Recipes live in `Tuning.recipes`. Built pieces that weigh something remove their own weight in `on_cut()`.
+- **Islands** are `Island` (StaticBody3D, grey-box built in code from `kind`; origin = centre of the lip, top at Y 0) placed by `IslandSpawner` (the `Islands` node, in the `recentre` group) in a fixed order: pod grove, weeping rock, wreck. Every island mesh uses `shaders/island_reveal.gdshader` with an instance `reveal` uniform. The raft is kept out of islands by `Raft._keep_clear_of_islands()`.
+- **Anchoring** is `RaftAnchor` (the raft's `Anchor` child): the hook hitting an `Island` anchors; the raft is reeled to `anchor_gap` from the lip and held; the rope limits height (in `RaftLift`); `AnchorCleat` casts off. `Tuning.leak_while_anchored` is on trial.
+- **Boarding:** Space at a ledge 0.6 to 1.5 m above the feet mantles (code-driven); `Ladder` volumes (hangroot) are climbable.
 - Build work happens locally on Andrew's PC, never in the cloud.
 
 ## Tests
@@ -38,6 +41,8 @@ Run from `groundless/` (exit code 0 = pass):
 ```
 C:\Users\aluck\Downloads\Godot_v4.7.2-stable_win64_console.exe --headless --fixed-fps 60 res://tests/ride_test.tscn
 ```
+
+`res://tests/island_test.tscn` is the milestone 4 check (spawning order and reachability, reveal, raft vs islands, hook anchoring, reeling, rope height limit, leaking while anchored, mantle, hangroot climb, walking back aboard, cast off, missed islands, recentring, the wreck's ending).
 
 `res://tests/gather_test.tscn` covers gathering (charged hook, early reel, clumps, grabbing by hand, wind nets, flotsam streams).
 
@@ -54,7 +59,7 @@ Defined in `project.godot` (physical keys):
 | Action | Default |
 | --- | --- |
 | `move_forward` / `move_back` / `move_left` / `move_right` | W / S / A / D |
-| `jump` | Space |
+| `jump` | Space (also mantles onto a ledge 0.6 to 1.5 m up, and climbs hangroot) |
 | `interact` | E (use things; grab flotsam within reach) |
 | `hotbar_1` … `hotbar_9` | 1 … 9 |
 | `hotbar_next` / `hotbar_prev` | Mouse wheel down / up |

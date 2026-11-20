@@ -142,3 +142,40 @@ extends Node
 ## Seconds of paddling before the player is tired, then seconds of rest.
 @export var paddle_stamina := 8.0
 @export var paddle_rest := 4.0
+
+@export_group("Islands")
+## How far ahead (downwind) a new island appears, in metres. The first is closer.
+@export var island_spawn_distance := 400.0
+@export var island_first_spawn_distance := 220.0
+## Reachability: max sideways offset = this x steer speed x time to pass (GDD).
+@export var island_offset_factor := 0.7
+## Sideways steer speed without a sky-paddle (nudging with the hook), m/s.
+@export var island_steer_without_paddle := 0.08
+## Most an island's lip sits above or below the raft when it appears, in metres.
+@export var island_max_vertical_offset := 40.0
+## The first island's lip is within this many metres of the raft's height.
+@export var island_first_vertical_offset := 4.0
+## Seconds after an island is passed or left before the next one appears.
+@export var island_next_delay := 20.0
+## A missed island comes back sooner.
+@export var island_missed_delay := 8.0
+## Reveal: an island is a dark silhouette beyond the far distance, full colour inside near.
+@export var island_reveal_far := 320.0
+@export var island_reveal_near := 90.0
+
+@export_group("Anchoring")
+## Anchor rope length: the raft stays within this distance above or below the anchor.
+@export var anchor_rope_length := 15.0
+## How fast the raft is reeled toward the island, m/s.
+@export var anchor_reel_speed := 1.5
+## Gap left between the raft's nearest edge and the island's lip, in metres.
+@export var anchor_gap := 1.0
+## Leaking while anchored: true = pods keep leaking, but only at the healthy rate (even
+## damaged ones); false = no leaking while anchored. Andrew is trying this out.
+@export var leak_while_anchored := true
+
+@export_group("Boarding")
+## Highest ledge the player can mantle onto, above their feet, in metres.
+@export var mantle_max_height := 1.5
+@export var mantle_time := 0.4
+@export var climb_speed := 2.5

@@ -49,7 +49,14 @@ var paddling := false
 ## Tests set this to paddle without the mouse.
 var paddle_override := false
 var builder: RaftBuilder
+## Climbing a ladder (hangroot) right now.
+var climbing := false
+## Mantling up onto a ledge right now (code-driven, no animation).
+var mantling := false
 var _resting := 0.0
+var _mantle_from := Vector3.ZERO
+var _mantle_to := Vector3.ZERO
+var _mantle_t := 0.0
 ## The interactable the player is looking at, or null.
 var focused: Interactable
 ## Flotsam within grabbing reach that the player is looking at, or null.
@@ -119,6 +126,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_carry_with_ride(delta)
+	if mantling:
+		_update_mantle(delta)
+		_update_focus()
+		return
 
 	var input_dir: Vector2
 	if input_override != null:
@@ -132,6 +143,27 @@ func _physics_process(delta: float) -> void:
 
 	var wants_jump := jump_override or Input.is_action_just_pressed("jump")
 	jump_override = false
+	# Jump next to a ledge up to mantle_max_height above your feet: climb onto it instead.
+	if wants_jump and (is_on_floor() or climbing) and try_mantle():
+		return
+	var ladder := _current_ladder()
+	var holding_climb := input_dir.y < -0.3 or Input.is_action_pressed("jump")
+	climbing = ladder != null and (holding_climb or climbing) and not (is_on_floor() and input_dir.y > 0.3)
+	if climbing:
+		# On hangroot: forward/jump climbs up, back climbs down, no gravity.
+		var vertical := 0.0
+		if holding_climb:
+			vertical = Tuning.climb_speed
+		elif input_dir.y > 0.3:
+			vertical = -Tuning.climb_speed
+		velocity = global_basis * Vector3(input_dir.x, 0.0, 0.0) * Tuning.climb_speed * 0.5
+		velocity.y = vertical
+		move_and_slide()
+		if vertical > 0.0 and global_position.y + Tuning.mantle_max_height >= ladder.top_y() - 0.4:
+			try_mantle()
+		_update_ride()
+		_update_focus()
+		return
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 	elif wants_jump:
@@ -328,6 +360,8 @@ func _update_ride() -> void:
 		# edge), keep the current ride rather than letting the raft slide out from under us.
 		if hit:
 			new_ride = hit if hit.is_in_group("rideable") else null
+			if hit is Island:
+				hit.mark_boarded()
 	else:
 		new_ride = hit if hit and hit.is_in_group("rideable") else null
 
@@ -352,6 +386,74 @@ func _ray_down(distance: float) -> Node3D:
 	return result.collider as Node3D
 
 
+# --- Boarding: mantle and climb ----------------------------------------------------
+
+func _current_ladder() -> Ladder:
+	for node in get_tree().get_nodes_in_group("ladder"):
+		if node.contains(global_position + Vector3.UP * 0.9):
+			return node
+	return null
+
+
+## Look for a ledge just ahead whose top is up to mantle_max_height above the feet.
+## Returns the standing point on it, or null.
+func find_ledge() -> Variant:
+	var forward := -global_basis.z
+	forward.y = 0.0
+	forward = forward.normalized()
+	var space := get_world_3d().direct_space_state
+	# Look a little way ahead, far enough to reach across the anchored raft's gap.
+	for reach_ahead: float in [0.6, 1.0, 1.4, 1.8]:
+		var top: Vector3 = global_position + forward * reach_ahead + Vector3.UP * (Tuning.mantle_max_height + 0.4)
+		var query := PhysicsRayQueryParameters3D.create(top, top + Vector3.DOWN * (Tuning.mantle_max_height + 0.4), 1, [get_rid()])
+		var hit := space.intersect_ray(query)
+		if hit.is_empty() or hit.normal.y < 0.7:
+			continue
+		var rise: float = hit.position.y - global_position.y
+		# Low ledges are just jumped; mantling starts where a jump stops being enough.
+		if rise < 0.6 or rise > Tuning.mantle_max_height:
+			continue
+		# Room to stand: nothing in the way at head height above the ledge.
+		var head := PhysicsRayQueryParameters3D.create(hit.position + Vector3.UP * 0.1, hit.position + Vector3.UP * 1.7, 1, [get_rid()])
+		if not space.intersect_ray(head).is_empty():
+			continue
+		return hit.position + forward * 0.25 + Vector3.UP * 0.02
+	return null
+
+
+## Start a mantle if there's a ledge ahead. Returns true if mantling.
+func try_mantle() -> bool:
+	var ledge: Variant = find_ledge()
+	if ledge == null:
+		return false
+	mantling = true
+	climbing = false
+	_mantle_from = global_position
+	_mantle_to = ledge
+	_mantle_t = 0.0
+	velocity = Vector3.ZERO
+	if ride_body != null:
+		ride_body = null
+	return true
+
+
+## Up first, then forward over the lip.
+func _update_mantle(delta: float) -> void:
+	_mantle_t = minf(_mantle_t + delta / Tuning.mantle_time, 1.0)
+	var up_part := clampf(_mantle_t / 0.6, 0.0, 1.0)
+	var over_part := clampf((_mantle_t - 0.5) / 0.5, 0.0, 1.0)
+	var p := _mantle_from
+	p.y = lerpf(_mantle_from.y, _mantle_to.y, smoothstep(0.0, 1.0, up_part))
+	p.x = lerpf(_mantle_from.x, _mantle_to.x, smoothstep(0.0, 1.0, over_part))
+	p.z = lerpf(_mantle_from.z, _mantle_to.z, smoothstep(0.0, 1.0, over_part))
+	global_position = p
+	if _mantle_t >= 1.0:
+		mantling = false
+		velocity = Vector3.ZERO
+		apply_floor_snap()
+		_update_ride()
+
+
 func _check_fall() -> void:
 	if home == null or ride_body != null:
 		return
@@ -367,3 +469,5 @@ func respawn() -> void:
 
 func _on_recentred(shift: Vector3) -> void:
 	_ride_previous.origin -= shift
+	_mantle_from -= shift
+	_mantle_to -= shift

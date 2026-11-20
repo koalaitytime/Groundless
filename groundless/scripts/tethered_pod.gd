@@ -51,8 +51,9 @@ func get_lift() -> float:
 	return capacity * gas
 
 
-func leak(delta: float, extra_per_min: float) -> void:
-	var rate := Tuning.leak_damaged_per_min if damaged else Tuning.leak_healthy_per_min
+## Lose gas. `force_healthy` uses the healthy rate even for a damaged pod (anchored).
+func leak(delta: float, extra_per_min: float, force_healthy := false) -> void:
+	var rate := Tuning.leak_damaged_per_min if damaged and not force_healthy else Tuning.leak_healthy_per_min
 	gas = maxf(gas - (rate + extra_per_min) / 60.0 * delta, 0.0)
 
 

@@ -81,6 +81,14 @@ func vent() -> void:
 
 func _physics_process(delta: float) -> void:
 	var murk_extra := Tuning.leak_murk_extra_per_min if is_in_murk() else 0.0
-	for pod in pods():
-		pod.leak(delta, murk_extra)
-	raft.target_height = get_resting_height()
+	var anchor := raft.get_node_or_null("Anchor") as RaftAnchor
+	var anchored := anchor != null and anchor.is_anchored()
+	if not anchored or Tuning.leak_while_anchored:
+		for pod in pods():
+			pod.leak(delta, murk_extra, anchored)
+	var target := get_resting_height()
+	if anchored:
+		# The anchor rope holds the raft within its length of the anchor point.
+		var a := anchor.anchor_position().y
+		target = clampf(target, a - Tuning.anchor_rope_length, a + Tuning.anchor_rope_length)
+	raft.target_height = target
