@@ -93,6 +93,11 @@ func _prompt_text() -> String:
 		if player.is_resting():
 			return "Too tired to paddle..."
 		return "Hold [Click] to paddle the way you face  (%d%%)" % roundi(100.0 * player.stamina / Tuning.paddle_stamina)
+	if player.focused_flotsam:
+		return "[E] Grab " + player.focused_flotsam.describe()
+	if player.selected_slot == Player.Slot.HOOK and player.hook_charge >= 0.0:
+		var bars := roundi(player.hook_charge * 10.0)
+		return "Throw  " + "|".repeat(bars) + ".".repeat(10 - bars)
 	return player.focused.get_prompt(player) if player.focused else ""
 
 

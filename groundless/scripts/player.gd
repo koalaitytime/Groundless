@@ -52,6 +52,10 @@ var builder: RaftBuilder
 var _resting := 0.0
 ## The interactable the player is looking at, or null.
 var focused: Interactable
+## Flotsam within grabbing reach that the player is looking at, or null.
+var focused_flotsam: Flotsam
+## Hook throw charge 0..1 while the button is held, or -1 when not charging.
+var hook_charge := -1.0
 var hook: Hook
 
 ## The body the player is riding, or null.
@@ -93,6 +97,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("use_primary"):
 		use_primary()
+	elif event.is_action_released("use_primary"):
+		release_primary()
+	elif event.is_action_pressed("interact") and focused_flotsam:
+		grab_flotsam()
 	elif event.is_action_pressed("interact") and focused:
 		focused.interact(self)
 	elif event.is_action_pressed("cut_loose"):
@@ -140,6 +148,11 @@ func _physics_process(delta: float) -> void:
 	_update_focus()
 	_update_paddle(delta)
 	_update_build_preview()
+	if hook_charge >= 0.0:
+		if selected_slot != Slot.HOOK:
+			hook_charge = -1.0
+		else:
+			hook_charge = minf(hook_charge + delta / Tuning.hook_charge_time, 1.0)
 
 
 # --- Inventory -----------------------------------------------------------------------
@@ -193,10 +206,26 @@ func cycle_slot(step: int) -> void:
 func use_primary() -> void:
 	match selected_slot:
 		Slot.HOOK:
-			throw_hook()
+			if hook.state == Hook.State.FLYING:
+				hook.reel_in()
+			elif hook.can_throw():
+				hook_charge = 0.0
 		Slot.HAMMER:
 			if builder and build_tile != null:
 				builder.place(build_choice, build_tile, self)
+
+
+func release_primary() -> void:
+	if hook_charge >= 0.0:
+		throw_hook(hook_charge)
+		hook_charge = -1.0
+
+
+func grab_flotsam() -> void:
+	if focused_flotsam and is_instance_valid(focused_flotsam) and not focused_flotsam.hooked:
+		focused_flotsam.give_to(self)
+		focused_flotsam.queue_free()
+		focused_flotsam = null
 
 
 func cut_loose() -> void:
@@ -248,17 +277,26 @@ func is_resting() -> bool:
 	return _resting > 0.0
 
 
-func throw_hook() -> void:
-	hook.throw(-camera.global_basis.z, _ride_velocity if ride_body else Vector3.ZERO)
+func throw_hook(power := 1.0) -> void:
+	hook.throw(-camera.global_basis.z, _ride_velocity if ride_body else Vector3.ZERO, power)
 
 
 ## Find what the player is looking at within reach.
 func _update_focus() -> void:
 	var from := camera.global_position
-	var query := PhysicsRayQueryParameters3D.create(from, from - camera.global_basis.z * reach, 1 | Interactable.LAYER, [get_rid()])
+	var distance := maxf(reach, Tuning.grab_reach)
+	var query := PhysicsRayQueryParameters3D.create(from, from - camera.global_basis.z * distance, 1 | Interactable.LAYER | Flotsam.LAYER, [get_rid()])
 	query.collide_with_areas = true
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	focused = hit.collider as Interactable if not hit.is_empty() else null
+	focused = null
+	focused_flotsam = null
+	if hit.is_empty():
+		return
+	var near := from.distance_to(hit.position)
+	if hit.collider is Flotsam and not hit.collider.hooked and near <= Tuning.grab_reach:
+		focused_flotsam = hit.collider
+	elif hit.collider is Interactable and near <= reach:
+		focused = hit.collider
 
 
 ## Apply the ridden body's motion since last tick to the player.

@@ -39,6 +39,8 @@ Run from `groundless/` (exit code 0 = pass):
 C:\Users\aluck\Downloads\Godot_v4.7.2-stable_win64_console.exe --headless --fixed-fps 60 res://tests/ride_test.tscn
 ```
 
+`res://tests/gather_test.tscn` covers gathering (charged hook, early reel, clumps, grabbing by hand, wind nets, flotsam streams).
+
 `res://tests/build_test.tscn` is the milestone 3 check (grid rules, costs, weight, walking on new planks, fixtures, roof, cutting loose, crafting, patching, sky-paddle, material flotsam).
 
 `res://tests/lift_test.tscn` is the milestone 2 check (lift, weight, controls, murk, hook, drift-pod spawning).
@@ -53,11 +55,11 @@ Defined in `project.godot` (physical keys):
 | --- | --- |
 | `move_forward` / `move_back` / `move_left` / `move_right` | W / S / A / D |
 | `jump` | Space |
-| `interact` | E |
+| `interact` | E (use things; grab flotsam within reach) |
 | `hotbar_1` … `hotbar_9` | 1 … 9 |
 | `hotbar_next` / `hotbar_prev` | Mouse wheel down / up |
 | `sprint` | Shift |
-| `use_primary` | Left mouse (hook: throw; hammer: place; sky-paddle: hold to paddle) |
+| `use_primary` | Left mouse (hook: hold to charge, release to throw, click again to reel in; hammer: place; sky-paddle: hold to paddle) |
 | `remove_piece` | Right mouse (with the hammer: take a piece back, full refund) |
 | `cut_loose` | X (with the hammer: crisis drop, no refund) |
 | `build_menu` | Tab |

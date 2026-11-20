@@ -71,17 +71,45 @@ extends Node
 @export var walk_speed := 4.0
 @export var sprint_speed := 6.0
 @export var jump_height := 1.2
-@export var hook_range := 12.0
-@export var hook_throw_speed := 24.0
+## Rope length: the hook can't fly farther than this.
+@export var hook_range := 20.0
+## Throw speed at no charge and at full charge. Hold the button to charge.
+@export var hook_throw_speed_min := 8.0
+@export var hook_throw_speed_max := 26.0
+@export var hook_charge_time := 0.8
+## How far the player can reach to grab flotsam by hand, in metres.
+@export var grab_reach := 2.8
 @export var hook_reel_speed := 10.0
 @export var hook_reel_speed_loaded := 6.0
 
 @export_group("Flotsam")
 ## Seconds between material flotsam spawns (drift-pods have their own timer above).
-@export var flotsam_interval_min := 6.0
-@export var flotsam_interval_max := 12.0
+@export var flotsam_interval_min := 10.0
+@export var flotsam_interval_max := 18.0
 ## Relative chance of each material.
 @export var flotsam_kind_weights := {"wood": 4.0, "fiber": 2.5, "rope": 2.0, "cloth": 1.5}
+## Chance a piece of material flotsam is a tangled clump of several items. 0 turns clumps off.
+@export_range(0.0, 1.0) var clump_chance := 0.3
+@export var clump_size_min := 2
+@export var clump_size_max := 3
+
+@export_group("Flotsam streams")
+## Ribbons of flotsam drifting at one height. Steer your height into one to gather.
+@export var stream_interval_min := 40.0
+@export var stream_interval_max := 70.0
+## How long a stream keeps flowing, in seconds.
+@export var stream_duration_min := 70.0
+@export var stream_duration_max := 120.0
+## How far above or below the raft a new stream appears, in metres.
+@export var stream_height_offset_min := 8.0
+@export var stream_height_offset_max := 25.0
+## Half-thickness of a stream, in metres, and how wide it passes either side of the raft.
+@export var stream_half_thickness := 1.5
+@export var stream_half_width := 4.0
+## Seconds between pieces in a stream.
+@export var stream_spawn_interval := 1.6
+## Chance a stream piece is a drift-pod rather than material.
+@export var stream_pod_chance := 0.12
 
 @export_group("Building")
 @export var tile_size := 1.5
@@ -90,6 +118,9 @@ extends Node
 @export var plank_weight := 6.0
 @export var roof_weight := 4.0
 @export var rain_catcher_weight := 2.0
+@export var wind_net_weight := 3.0
+## Items a wind net holds before it must be emptied.
+@export var wind_net_capacity := 8
 ## What the player wakes up with, salvaged from the slab.
 @export var starting_items := {"wood": 6, "rope": 3, "cloth": 2, "fiber": 2}
 ## Build menu. kind: floor (extends the raft), fixture (one per tile), roof (one per tile),
@@ -100,6 +131,7 @@ extends Node
 	"roof": {"name": "Roof", "kind": "roof", "cost": {"wood": 2, "fiber": 2, "cloth": 1}},
 	"rain_catcher": {"name": "Rain catcher", "kind": "fixture", "cost": {"wood": 1, "cloth": 1}},
 	"ballast_sack": {"name": "Ballast sack", "kind": "fixture", "cost": {"cloth": 2}},
+	"wind_net": {"name": "Wind net", "kind": "fixture", "cost": {"wood": 2, "rope": 2, "fiber": 2}},
 	"sky_paddle": {"name": "Sky-paddle", "kind": "item", "cost": {"wood": 2, "cloth": 1}},
 	"patch": {"name": "Patch", "kind": "item", "cost": {"fiber": 2, "pod": 1}},
 }

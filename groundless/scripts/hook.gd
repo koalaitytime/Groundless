@@ -1,19 +1,24 @@
 class_name Hook
 extends Node3D
-## The hook. Thrown from the player's hand along the view, it flies on an arc up to
-## Tuning.hook_range, then reels back. Flotsam it touches (drift-pods, materials) comes back
-## with it and goes into the player's inventory. It hits the raft and other solid things too, and
-## then just reels back. Works in world space, so it shifts itself on recentre.
+## The hook. Hold the use button to charge, release to throw along the view: the harder the
+## throw, the farther it arcs, up to the rope's length (Tuning.hook_range). Click again while
+## it flies to reel in early. Flotsam it touches (drift-pods, materials, clumps) comes back
+## with it and goes into the player's inventory. It also stops on solid things and reels back.
+## The rope sags and sways in the wind. Works in world space, so it shifts itself on recentre.
 
 enum State { IDLE, FLYING, REELING }
 
 const HIT_MASK := 1 | Flotsam.LAYER
+const ROPE_SEGMENTS := 18
 
 var state := State.IDLE
 var hooked_item: Flotsam
 
 var _player: Player
 var _velocity := Vector3.ZERO
+## Rope paid out for this throw: a harder throw pays out more, up to Tuning.hook_range.
+var _max_length := 0.0
+var _time := 0.0
 var _head: MeshInstance3D
 var _rope: MeshInstance3D
 var _rope_mesh := ImmediateMesh.new()
@@ -45,17 +50,27 @@ func can_throw() -> bool:
 	return state == State.IDLE
 
 
-## Throw along `direction`. `carry_velocity` is added (the raft's motion under the player).
-func throw(direction: Vector3, carry_velocity := Vector3.ZERO) -> void:
+## Throw along `direction`. `power` 0..1 sets the speed between the min and max throw speed.
+## `carry_velocity` is added (the raft's motion under the player).
+func throw(direction: Vector3, carry_velocity := Vector3.ZERO, power := 1.0) -> void:
 	if not can_throw():
 		return
 	state = State.FLYING
 	global_position = hand_position()
-	_velocity = direction.normalized() * Tuning.hook_throw_speed + carry_velocity
+	var speed := lerpf(Tuning.hook_throw_speed_min, Tuning.hook_throw_speed_max, clampf(power, 0.0, 1.0))
+	_velocity = direction.normalized() * speed + carry_velocity
+	_max_length = lerpf(Tuning.hook_range * 0.3, Tuning.hook_range, clampf(power, 0.0, 1.0))
 	_set_visible(true)
 
 
+## Stop flying and reel back now.
+func reel_in() -> void:
+	if state == State.FLYING:
+		state = State.REELING
+
+
 func _physics_process(delta: float) -> void:
+	_time += delta
 	match state:
 		State.FLYING:
 			_fly(delta)
@@ -80,7 +95,8 @@ func _fly(delta: float) -> void:
 		state = State.REELING
 		return
 	global_position = next
-	if global_position.distance_to(hand_position()) >= Tuning.hook_range:
+	# The rope runs out: it goes taut and the hook comes back.
+	if global_position.distance_to(hand_position()) >= _max_length:
 		state = State.REELING
 
 
@@ -92,18 +108,28 @@ func _reel(delta: float) -> void:
 		hooked_item.global_position = global_position
 	if global_position.distance_to(target) < 0.6:
 		if hooked_item and is_instance_valid(hooked_item):
-			_player.add_item(hooked_item.kind)
+			hooked_item.give_to(_player)
 			hooked_item.queue_free()
 		hooked_item = null
 		state = State.IDLE
 		_set_visible(false)
 
 
+## Rope as a sagging, wind-swayed curve from the hand to the hook.
 func _draw_rope() -> void:
+	var start := hand_position()
+	var end := global_position
+	var length := start.distance_to(end)
+	# Slack while flying out is small; a reeling rope with a catch sags more.
+	var sag := length * (0.06 if state == State.FLYING else 0.12)
+	var wind: Vector3 = Wind.velocity_at(end.y)
+	var sway := wind.normalized() * length * 0.04 * sin(_time * 2.1)
 	_rope_mesh.clear_surfaces()
-	_rope_mesh.surface_begin(Mesh.PRIMITIVE_LINES, _rope_material)
-	_rope_mesh.surface_add_vertex(hand_position())
-	_rope_mesh.surface_add_vertex(global_position)
+	_rope_mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP, _rope_material)
+	for i in ROPE_SEGMENTS + 1:
+		var t := float(i) / ROPE_SEGMENTS
+		var bulge := 4.0 * t * (1.0 - t)
+		_rope_mesh.surface_add_vertex(start.lerp(end, t) + Vector3.DOWN * sag * bulge + sway * bulge)
 	_rope_mesh.surface_end()
 
 

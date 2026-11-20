@@ -94,6 +94,8 @@ func weight_of(id: String) -> float:
 			return Tuning.rain_catcher_weight
 		"ballast_sack":
 			return Tuning.sandbag_weight
+		"wind_net":
+			return Tuning.wind_net_weight
 	return 0.0
 
 
@@ -137,6 +139,10 @@ func place(id: String, tile: Vector2i, player: Player) -> bool:
 			_add_fixture(tile, RainCatcher.new(), centre, id)
 		"ballast_sack":
 			_add_fixture(tile, Sandbag.new(), centre, id)
+		"wind_net":
+			var net := WindNet.new()
+			net.rotation.y = facing_yaw(player)
+			_add_fixture(tile, net, centre, id)
 	return true
 
 
@@ -186,6 +192,13 @@ func _add_shape(size: Vector3, centre: Vector3) -> CollisionShape3D:
 	shape.position = centre
 	raft.add_child(shape)
 	return shape
+
+
+## The player's facing in raft space, snapped to 90 degrees (for nets).
+func facing_yaw(player: Player) -> float:
+	var forward := raft.global_basis.inverse() * -player.camera.global_basis.z
+	var yaw := atan2(-forward.x, -forward.z)
+	return snappedf(yaw, PI / 2.0)
 
 
 # --- Cutting loose ------------------------------------------------------------------
@@ -361,12 +374,16 @@ func show_ghost(id: String, tile: Variant, player: Player) -> String:
 		return ""
 	var problem := placement_problem(id, tile, player)
 	_ghost.mesh = _ghost_mesh(id)
+	_ghost.rotation = Vector3.ZERO
 	var centre := tile_centre(tile)
 	match id:
 		"plank":
 			_ghost.position = centre + Vector3(0, -0.075, 0)
 		"roof":
 			_ghost.position = centre + Vector3(0, 1.2, 0)
+		"wind_net":
+			_ghost.position = centre + Vector3(0, 1.1, 0)
+			_ghost.rotation.y = facing_yaw(player)
 		_:
 			_ghost.position = centre + Vector3(0, 0.3, 0)
 	_ghost_material.albedo_color = Color(0.4, 1.0, 0.5, 0.35) if problem == "" else Color(1.0, 0.35, 0.3, 0.35)
@@ -387,6 +404,8 @@ func _ghost_mesh(id: String) -> Mesh:
 				box.size = Vector3(Tuning.tile_size, 0.15, Tuning.tile_size)
 			"roof":
 				box.size = Vector3(Tuning.tile_size, 2.4, Tuning.tile_size)
+			"wind_net":
+				box.size = Vector3(1.44, 2.2, 0.1)
 			_:
 				box.size = Vector3(0.7, 0.6, 0.7)
 		_ghost_meshes[id] = box

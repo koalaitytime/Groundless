@@ -1,7 +1,8 @@
 class_name AltitudeDial
 extends Node3D
 ## Brass altitude dial on a post. The bright needle is the raft's height; the thin dark
-## needle is the resting height it is heading for. A red mark shows the murk's top.
+## needle is the resting height it is heading for. A red mark shows the murk's top, and
+## blue marks show the heights of any flotsam streams flowing right now.
 ## The dial face points along the node's +Z.
 
 const MIN_HEIGHT := -60.0
@@ -12,6 +13,7 @@ const FACE_HEIGHT := 1.35
 var _lift: RaftLift
 var _needle: Node3D
 var _target_needle: Node3D
+var _stream_marks: Array[Node3D] = []
 
 
 func _ready() -> void:
@@ -39,6 +41,14 @@ func _ready() -> void:
 		var is_murk := is_equal_approx(h, Tuning.murk_top)
 		_add_tick(h, Color(0.75, 0.15, 0.1) if is_murk else Color(0.2, 0.15, 0.1), 0.07 if is_murk else 0.04)
 		h += 60.0
+
+	for i in 2:
+		var mark := Node3D.new()
+		mark.position = Vector3(0, FACE_HEIGHT, 0.03)
+		mark.add_child(Interactable.make_box(Vector3(0.03, 0.05, 0.012), Color(0.25, 0.55, 0.95), Vector3(0, 0.2, 0)))
+		mark.visible = false
+		add_child(mark)
+		_stream_marks.append(mark)
 
 	_target_needle = _make_needle(0.17, 0.012, Color(0.15, 0.12, 0.1), 0.035)
 	_needle = _make_needle(0.21, 0.02, Color(0.95, 0.92, 0.85), 0.045)
@@ -73,3 +83,9 @@ func _process(delta: float) -> void:
 	var target := _lift.get_resting_height()
 	_needle.rotation.z = lerp_angle(_needle.rotation.z, _angle_for(height), 1.0 - exp(-8.0 * delta))
 	_target_needle.rotation.z = lerp_angle(_target_needle.rotation.z, _angle_for(target), 1.0 - exp(-3.0 * delta))
+	var spawner := get_tree().get_first_node_in_group("flotsam_spawner") as FlotsamSpawner
+	for i in _stream_marks.size():
+		var on := spawner != null and i < spawner.streams.size()
+		_stream_marks[i].visible = on
+		if on:
+			_stream_marks[i].rotation.z = _angle_for(spawner.streams[i].height)

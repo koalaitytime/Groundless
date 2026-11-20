@@ -1,18 +1,22 @@
 class_name Flotsam
 extends Area3D
-## Something riding the wind: a ripe drift-pod, or a bundle of wood, rope, cloth or fiber.
-## Catch it with the hook. Sits on physics layer 2 ("flotsam"), which the hook's ray checks.
+## Something riding the wind: a ripe drift-pod, a bundle of wood, rope, cloth or fiber, or a
+## tangled clump of several. Catch it with the hook, a wind net, or grab it by hand (E).
+## Sits on physics layer 2 ("flotsam").
 
 const LAYER := 2
 
-## "pod", "wood", "rope", "cloth" or "fiber". Set before adding to the tree.
-@export var kind := "pod"
-
+## What catching this gives: each entry is "pod", "wood", "rope", "cloth" or "fiber".
+## Set before adding to the tree. More than one entry makes a clump.
+var contents: Array[String] = ["pod"]
+## Stream pieces glint so a stream reads from far away.
+var glint := false
 var hooked := false
 var age := 0.0
 
 var _time := randf() * 10.0
 var _bob_offset := 0.0
+var _glint_material: StandardMaterial3D
 
 
 func _ready() -> void:
@@ -21,14 +25,43 @@ func _ready() -> void:
 	monitoring = false
 	# Generous catch radius so the hook feels fair.
 	var sphere_shape := SphereShape3D.new()
-	sphere_shape.radius = 0.9
+	sphere_shape.radius = 0.9 if contents.size() == 1 else 1.2
 	var shape := CollisionShape3D.new()
 	shape.shape = sphere_shape
 	add_child(shape)
-	add_child(_make_visual())
+	var offsets := [Vector3.ZERO, Vector3(0.35, 0.2, 0.1), Vector3(-0.3, -0.15, 0.25), Vector3(0.05, 0.3, -0.35)]
+	for i in contents.size():
+		var visual := Flotsam.make_visual(contents[i])
+		visual.position = offsets[i % offsets.size()]
+		add_child(visual)
+	if glint:
+		_glint_material = StandardMaterial3D.new()
+		_glint_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_glint_material.albedo_color = Color(1.0, 0.92, 0.7)
+		var spark := SphereMesh.new()
+		spark.radius = 0.1
+		spark.height = 0.2
+		spark.material = _glint_material
+		var spark_instance := MeshInstance3D.new()
+		spark_instance.mesh = spark
+		spark_instance.position = Vector3(0, 0.45, 0)
+		add_child(spark_instance)
 
 
-func _make_visual() -> MeshInstance3D:
+## Human-readable list, e.g. "wood + rope".
+func describe() -> String:
+	var names: Array[String] = []
+	for k in contents:
+		names.append("drift-pod" if k == "pod" else k)
+	return " + ".join(names)
+
+
+func give_to(player: Player) -> void:
+	for k in contents:
+		player.add_item(k)
+
+
+static func make_visual(kind: String) -> MeshInstance3D:
 	var material := StandardMaterial3D.new()
 	var mesh: Mesh
 	match kind:
@@ -82,3 +115,6 @@ func _physics_process(delta: float) -> void:
 	global_position += wind * delta + Vector3.UP * (bob - _bob_offset)
 	_bob_offset = bob
 	rotation.y += delta * 0.4
+	if _glint_material:
+		var pulse := 0.6 + 0.4 * sin(_time * 5.0)
+		_glint_material.albedo_color = Color(1.0, 0.92, 0.7) * pulse
