@@ -47,3 +47,11 @@ func _physics_process(delta: float) -> void:
 
 func _on_recentred(shift: Vector3) -> void:
 	global_position -= shift
+
+
+## Called when cut loose with the hammer.
+func on_cut() -> void:
+	if not _dropped and _lift:
+		_lift.remove_weight(Tuning.sandbag_weight)
+	_dropped = true
+	collision_layer = 0

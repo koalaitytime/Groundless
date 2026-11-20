@@ -1,16 +1,16 @@
 class_name Hook
 extends Node3D
 ## The hook. Thrown from the player's hand along the view, it flies on an arc up to
-## Tuning.hook_range, then reels back. A drift-pod it touches comes back with it and is
-## added to the player's carried pods. It hits the raft and other solid things too, and
+## Tuning.hook_range, then reels back. Flotsam it touches (drift-pods, materials) comes back
+## with it and goes into the player's inventory. It hits the raft and other solid things too, and
 ## then just reels back. Works in world space, so it shifts itself on recentre.
 
 enum State { IDLE, FLYING, REELING }
 
-const HIT_MASK := 1 | DriftPod.LAYER
+const HIT_MASK := 1 | Flotsam.LAYER
 
 var state := State.IDLE
-var hooked_pod: DriftPod
+var hooked_item: Flotsam
 
 var _player: Player
 var _velocity := Vector3.ZERO
@@ -73,10 +73,10 @@ func _fly(delta: float) -> void:
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty():
 		global_position = hit.position
-		var pod := hit.collider as DriftPod
-		if pod and not pod.hooked:
-			hooked_pod = pod
-			pod.hooked = true
+		var item := hit.collider as Flotsam
+		if item and not item.hooked:
+			hooked_item = item
+			item.hooked = true
 		state = State.REELING
 		return
 	global_position = next
@@ -86,15 +86,15 @@ func _fly(delta: float) -> void:
 
 func _reel(delta: float) -> void:
 	var target := hand_position()
-	var speed := Tuning.hook_reel_speed_loaded if hooked_pod else Tuning.hook_reel_speed
+	var speed := Tuning.hook_reel_speed_loaded if hooked_item else Tuning.hook_reel_speed
 	global_position = global_position.move_toward(target, speed * delta)
-	if hooked_pod and is_instance_valid(hooked_pod):
-		hooked_pod.global_position = global_position
+	if hooked_item and is_instance_valid(hooked_item):
+		hooked_item.global_position = global_position
 	if global_position.distance_to(target) < 0.6:
-		if hooked_pod and is_instance_valid(hooked_pod):
-			hooked_pod.queue_free()
-			_player.held_pods += 1
-		hooked_pod = null
+		if hooked_item and is_instance_valid(hooked_item):
+			_player.add_item(hooked_item.kind)
+			hooked_item.queue_free()
+		hooked_item = null
 		state = State.IDLE
 		_set_visible(false)
 

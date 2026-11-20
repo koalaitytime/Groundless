@@ -20,6 +20,8 @@ extends AnimatableBody3D
 var velocity := Vector3.ZERO
 
 var _time := 0.0
+var _paddle_target := Vector3.ZERO
+var _paddle_velocity := Vector3.ZERO
 var _base_position := Vector3.ZERO
 var _yaw := 0.0
 
@@ -51,7 +53,9 @@ func _physics_process(delta: float) -> void:
 	)
 	var vy := lerpf(velocity.y, desired_vy, 1.0 - exp(-Tuning.vertical_smoothing * delta))
 	velocity = Vector3(horizontal.x, vy, horizontal.z)
-	_base_position += velocity * delta
+	_paddle_velocity = _paddle_velocity.lerp(_paddle_target, 1.0 - exp(-2.0 * delta))
+	_paddle_target = Vector3.ZERO
+	_base_position += (velocity + _paddle_velocity) * delta
 
 	_yaw += deg_to_rad(turn_degrees_per_second) * sin(_time * 0.05) * delta
 
@@ -63,6 +67,17 @@ func _physics_process(delta: float) -> void:
 		Basis.from_euler(Vector3(pitch, _yaw, roll)),
 		_base_position + Vector3.UP * bob
 	)
+
+
+## The sky-paddle pushes the raft this way (horizontal) for this tick.
+func paddle(direction: Vector3) -> void:
+	direction.y = 0.0
+	_paddle_target = direction.normalized() * Tuning.paddle_speed
+
+
+## Total horizontal velocity including paddling.
+func get_horizontal_velocity() -> Vector3:
+	return Vector3(velocity.x + _paddle_velocity.x, 0.0, velocity.z + _paddle_velocity.z)
 
 
 ## Height without the bob.

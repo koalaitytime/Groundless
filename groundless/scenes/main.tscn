@@ -4,7 +4,8 @@
 [ext_resource type="PackedScene" path="res://scenes/raft.tscn" id="2_raft"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="Script" path="res://scripts/sky_debris.gd" id="4_debris"]
-[ext_resource type="Script" path="res://scripts/drift_pod_spawner.gd" id="5_spawner"]
+[ext_resource type="Script" path="res://scripts/flotsam_spawner.gd" id="5_spawner"]
+[ext_resource type="Script" path="res://scripts/build_menu.gd" id="6_menu"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.2, 0.14, 0.36, 1)
@@ -58,7 +59,7 @@ home = NodePath("../Raft")
 script = ExtResource("4_debris")
 follow = NodePath("../Raft")
 
-[node name="DriftPods" type="Node3D" parent="." node_paths=PackedStringArray("raft")]
+[node name="Flotsam" type="Node3D" parent="." node_paths=PackedStringArray("raft")]
 script = ExtResource("5_spawner")
 raft = NodePath("../Raft")
 
@@ -109,8 +110,23 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -260.0
+offset_left = -600.0
 offset_top = -44.0
 offset_right = -16.0
 offset_bottom = -16.0
 horizontal_alignment = 2
+
+[node name="Hotbar" type="Label" parent="Hud"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -44.0
+offset_right = 300.0
+offset_bottom = -16.0
+horizontal_alignment = 1
+
+[node name="BuildMenu" type="PanelContainer" parent="Hud"]
+script = ExtResource("6_menu")

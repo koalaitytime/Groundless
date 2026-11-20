@@ -3,6 +3,7 @@ extends Interactable
 ## A stake on the raft that one pod can be tethered to.
 ## Empty + carrying a drift-pod: tether it (adds a small pod's capacity, full of gas).
 ## Occupied + carrying a drift-pod: refill this pod's gas instead.
+## Damaged pod + carrying a patch: patch it.
 
 ## Pod tethered here at the start. 0 = empty anchor.
 @export var start_capacity := 0.0
@@ -40,12 +41,18 @@ func get_prompt(player: Player) -> String:
 			return "[E] Tether drift-pod here"
 		return "Empty anchor point"
 	var status := "Pod %d%%%s" % [roundi(pod.gas * 100.0), "  (wilting)" if pod.damaged else ""]
+	if pod.damaged and player.items.get("patch", 0) > 0:
+		return "%s\n[E] Patch the pod (stops the fast leak)" % status
 	if player.held_pods > 0 and pod.gas < 0.99:
 		return "%s\n[E] Refill with drift-pod (+%d%%)" % [status, roundi(Tuning.refill_gas * 100.0)]
 	return status
 
 
 func interact(player: Player) -> void:
+	if pod and pod.damaged and player.items.get("patch", 0) > 0:
+		pod.damaged = false
+		player.items.patch -= 1
+		return
 	if player.held_pods <= 0:
 		return
 	if pod == null:
@@ -55,3 +62,10 @@ func interact(player: Player) -> void:
 	else:
 		return
 	player.held_pods -= 1
+
+
+## Called when this anchor is cut loose: its pod goes with it.
+func on_cut() -> void:
+	if pod and _lift:
+		_lift.remove_weight(Tuning.tether_weight)
+	collision_layer = 0

@@ -73,3 +73,38 @@ extends Node
 @export var hook_throw_speed := 24.0
 @export var hook_reel_speed := 10.0
 @export var hook_reel_speed_loaded := 6.0
+
+@export_group("Flotsam")
+## Seconds between material flotsam spawns (drift-pods have their own timer above).
+@export var flotsam_interval_min := 6.0
+@export var flotsam_interval_max := 12.0
+## Relative chance of each material.
+@export var flotsam_kind_weights := {"wood": 4.0, "fiber": 2.5, "rope": 2.0, "cloth": 1.5}
+
+@export_group("Building")
+@export var tile_size := 1.5
+## How far away the player can place and cut pieces, in metres.
+@export var build_reach := 6.0
+@export var plank_weight := 15.0
+@export var roof_weight := 10.0
+@export var rain_catcher_weight := 3.0
+## What the player wakes up with, salvaged from the slab.
+@export var starting_items := {"wood": 6, "rope": 3, "cloth": 2, "fiber": 2}
+## Build menu. kind: floor (extends the raft), fixture (one per tile), roof (one per tile),
+## item (crafted into the inventory). Weights are set above or by the piece itself.
+@export var recipes := {
+	"plank": {"name": "Plank", "kind": "floor", "cost": {"wood": 2, "rope": 1}},
+	"anchor": {"name": "Pod anchor", "kind": "fixture", "cost": {"wood": 1, "rope": 1}},
+	"roof": {"name": "Roof", "kind": "roof", "cost": {"wood": 2, "fiber": 2, "cloth": 1}},
+	"rain_catcher": {"name": "Rain catcher", "kind": "fixture", "cost": {"wood": 1, "cloth": 1}},
+	"ballast_sack": {"name": "Ballast sack", "kind": "fixture", "cost": {"cloth": 2}},
+	"sky_paddle": {"name": "Sky-paddle", "kind": "item", "cost": {"wood": 2, "cloth": 1}},
+	"patch": {"name": "Patch", "kind": "item", "cost": {"fiber": 2, "pod": 1}},
+}
+
+@export_group("Sky-paddle")
+## Sideways speed the paddle gives the raft while paddling.
+@export var paddle_speed := 0.8
+## Seconds of paddling before the player is tired, then seconds of rest.
+@export var paddle_stamina := 8.0
+@export var paddle_rest := 4.0

@@ -16,6 +16,12 @@ const FOG_COLOUR_MURK := Color(0.08, 0.1, 0.22)
 @onready var debug_label: Label = $Debug/Label
 @onready var prompt_label: Label = $Hud/Prompt
 @onready var carried_label: Label = $Hud/Carried
+@onready var hotbar_label: Label = $Hud/Hotbar
+@onready var build_menu: BuildMenu = $Hud/BuildMenu
+
+
+func _ready() -> void:
+	build_menu.player = player
 
 
 func _process(_delta: float) -> void:
@@ -28,8 +34,9 @@ func _process(_delta: float) -> void:
 	environment.fog_density = lerpf(FOG_CLEAR, FOG_MURK, depth * depth)
 	environment.fog_light_color = FOG_COLOUR_CLEAR.lerp(FOG_COLOUR_MURK, depth)
 
-	prompt_label.text = player.focused.get_prompt(player) if player.focused else ""
-	carried_label.text = "Drift-pods carried: %d" % player.held_pods if player.held_pods > 0 else ""
+	prompt_label.text = _prompt_text()
+	carried_label.text = _inventory_text()
+	hotbar_label.text = _hotbar_text()
 
 	if debug_label.visible:
 		var wind: Vector3 = Wind.velocity_at(raft.global_position.y)
@@ -57,6 +64,55 @@ func _process(_delta: float) -> void:
 		]
 
 
+func _prompt_text() -> String:
+	if player.selected_slot == Player.Slot.HAMMER:
+		var recipe: Dictionary = Tuning.recipes[player.build_choice]
+		var kg := player.builder.weight_of(player.build_choice)
+		var cost: Array[String] = []
+		for k in recipe.cost:
+			cost.append("%d %s" % [recipe.cost[k], k])
+		var text := "%s  (%s)" % [recipe.name, ", ".join(cost)]
+		if kg > 0.0:
+			text += "\n+%d kg: resting height -%d m" % [kg, roundi(kg * Tuning.metres_per_kg)]
+		if player.build_tile == null:
+			text += "\nAim at the deck or just past its edge"
+		elif player.build_problem != "":
+			text += "\n" + player.build_problem
+		else:
+			text += "\n[Click] Place   [X] Cut loose   [Tab] Build menu"
+		return text
+	if player.selected_slot == Player.Slot.PADDLE:
+		if player.is_resting():
+			return "Too tired to paddle..."
+		return "Hold [Click] to paddle the way you face  (%d%%)" % roundi(100.0 * player.stamina / Tuning.paddle_stamina)
+	return player.focused.get_prompt(player) if player.focused else ""
+
+
+func _inventory_text() -> String:
+	var parts: Array[String] = []
+	for k in ["wood", "rope", "cloth", "fiber", "pod", "patch"]:
+		var n: int = player.items.get(k, 0)
+		if n > 0:
+			parts.append("%s %d" % ["drift-pod" if k == "pod" else k, n])
+	return "   ".join(parts)
+
+
+func _hotbar_text() -> String:
+	var parts: Array[String] = []
+	for slot in [1, 2, 3]:
+		if not player.slot_available(slot):
+			continue
+		var name: String = Player.SLOT_NAMES[slot]
+		if slot == Player.Slot.HAMMER:
+			name += ": " + Tuning.recipes[player.build_choice].name
+		parts.append(("[%d %s]" if slot == player.selected_slot else " %d %s ") % [slot, name])
+	return "   ".join(parts)
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("build_menu"):
+		build_menu.toggle()
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F3:
 		debug_label.visible = not debug_label.visible

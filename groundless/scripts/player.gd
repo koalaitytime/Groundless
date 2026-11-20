@@ -26,8 +26,30 @@ extends CharacterBody3D
 var input_override: Variant = null
 var jump_override := false
 
+enum Slot { HOOK = 1, HAMMER = 2, PADDLE = 3 }
+const SLOT_NAMES := {1: "Hook", 2: "Hammer", 3: "Sky-paddle"}
+
+## Inventory: materials ("wood", "rope", "cloth", "fiber"), drift-pods ("pod") and crafted
+## items ("patch", "sky_paddle"). Carried things weigh nothing (GDD).
+var items := {}
 ## Drift-pods caught and not yet used.
-var held_pods := 0
+var held_pods: int:
+	get:
+		return items.get("pod", 0)
+	set(value):
+		items["pod"] = value
+var selected_slot := Slot.HOOK
+## The piece the hammer places.
+var build_choice := "plank"
+## Why the current hammer placement isn't possible ("" if it is).
+var build_problem := ""
+var build_tile: Variant = null
+var stamina := 0.0
+var paddling := false
+## Tests set this to paddle without the mouse.
+var paddle_override := false
+var builder: RaftBuilder
+var _resting := 0.0
 ## The interactable the player is looking at, or null.
 var focused: Interactable
 var hook: Hook
@@ -49,6 +71,12 @@ func _ready() -> void:
 	WorldOrigin.recentred.connect(_on_recentred)
 	hook = Hook.new()
 	add_child(hook)
+	items = Tuning.starting_items.duplicate()
+	for k in ["pod", "patch", "sky_paddle"]:
+		items[k] = 0
+	stamina = Tuning.paddle_stamina
+	if home:
+		builder = home.get_node_or_null("Build")
 	if DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -64,9 +92,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("use_primary"):
-		throw_hook()
+		use_primary()
 	elif event.is_action_pressed("interact") and focused:
 		focused.interact(self)
+	elif event.is_action_pressed("cut_loose"):
+		cut_loose()
+	elif event.is_action_pressed("hotbar_next"):
+		cycle_slot(1)
+	elif event.is_action_pressed("hotbar_prev"):
+		cycle_slot(-1)
+	else:
+		for n in [1, 2, 3]:
+			if event.is_action_pressed("hotbar_%d" % n):
+				select_slot(n)
 
 
 func _physics_process(delta: float) -> void:
@@ -98,6 +136,106 @@ func _physics_process(delta: float) -> void:
 	_update_ride()
 	_check_fall()
 	_update_focus()
+	_update_paddle(delta)
+	_update_build_preview()
+
+
+# --- Inventory -----------------------------------------------------------------------
+
+func add_item(kind: String, count := 1) -> void:
+	items[kind] = items.get(kind, 0) + count
+
+
+func has_items(cost: Dictionary) -> bool:
+	for k in cost:
+		if items.get(k, 0) < cost[k]:
+			return false
+	return true
+
+
+func spend_items(cost: Dictionary) -> void:
+	for k in cost:
+		items[k] = items.get(k, 0) - cost[k]
+
+
+## Craft an item recipe (sky-paddle, patch) into the inventory.
+func craft(id: String) -> bool:
+	var recipe: Dictionary = Tuning.recipes[id]
+	if recipe.kind != "item" or not has_items(recipe.cost):
+		return false
+	spend_items(recipe.cost)
+	add_item(id)
+	return true
+
+
+# --- Hotbar ------------------------------------------------------------------------
+
+func slot_available(slot: int) -> bool:
+	return slot != Slot.PADDLE or items.get("sky_paddle", 0) > 0
+
+
+func select_slot(slot: int) -> void:
+	if slot_available(slot):
+		selected_slot = slot
+
+
+func cycle_slot(step: int) -> void:
+	var slot := selected_slot
+	for i in 3:
+		slot = wrapi(slot + step, 1, 4)
+		if slot_available(slot):
+			selected_slot = slot
+			return
+
+
+func use_primary() -> void:
+	match selected_slot:
+		Slot.HOOK:
+			throw_hook()
+		Slot.HAMMER:
+			if builder and build_tile != null:
+				builder.place(build_choice, build_tile, self)
+
+
+func cut_loose() -> void:
+	if selected_slot == Slot.HAMMER and builder:
+		var tile: Variant = builder.aim_tile(camera)
+		if tile != null:
+			builder.cut(tile)
+
+
+func _update_build_preview() -> void:
+	if builder == null:
+		return
+	if selected_slot == Slot.HAMMER:
+		build_tile = builder.aim_tile(camera)
+		build_problem = builder.show_ghost(build_choice, build_tile, self)
+	else:
+		build_tile = null
+		builder.hide_ghost()
+
+
+## Sky-paddle: hold the use button to push the raft the way you face. Stamina limited.
+func _update_paddle(delta: float) -> void:
+	var wants := paddle_override or (selected_slot == Slot.PADDLE and Input.is_action_pressed("use_primary") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED)
+	paddling = false
+	if wants and _resting <= 0.0 and stamina > 0.0 and ride_body is Raft:
+		paddling = true
+		ride_body.paddle(-camera.global_basis.z)
+		stamina -= delta
+		if stamina <= 0.0:
+			stamina = 0.0
+			_resting = Tuning.paddle_rest
+	elif _resting > 0.0:
+		_resting -= delta
+		if _resting <= 0.0:
+			stamina = Tuning.paddle_stamina
+	elif not wants:
+		stamina = minf(Tuning.paddle_stamina, stamina + delta * Tuning.paddle_stamina / Tuning.paddle_rest)
+
+
+func is_resting() -> bool:
+	return _resting > 0.0
 
 
 func throw_hook() -> void:

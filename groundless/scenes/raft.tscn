@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/vent_cord.gd" id="4_vent"]
 [ext_resource type="Script" path="res://scripts/sandbag.gd" id="5_sandbag"]
 [ext_resource type="Script" path="res://scripts/altitude_dial.gd" id="6_dial"]
+[ext_resource type="Script" path="res://scripts/raft_builder.gd" id="7_build"]
 
 [sub_resource type="StandardMaterial3D" id="mat_slab"]
 albedo_color = Color(0.46, 0.45, 0.48, 1)
@@ -83,3 +84,6 @@ script = ExtResource("6_dial")
 [node name="Sandbag" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 0.4)
 script = ExtResource("5_sandbag")
+
+[node name="Build" type="Node" parent="."]
+script = ExtResource("7_build")

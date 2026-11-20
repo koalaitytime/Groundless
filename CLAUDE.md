@@ -27,7 +27,8 @@ A floating-raft survival game in Godot 4.7 (GDScript, Forward+, Jolt Physics). T
 - **Wind** is the `Wind` autoload: `Wind.velocity_at(height)`.
 - **Tuning numbers** all live in the `Tuning` autoload (`scripts/tuning.gd`), seeded from `groundless/docs/early-design-numbers.md`. Never hard-code a gameplay number elsewhere.
 - **Lift** is `RaftLift` (the raft's `Lift` child): resting height = clamp((lift - weight) x metres_per_kg, murk_floor, ceiling). Y = 0 is the murk's top. Things that weigh something call `RaftLift.find(self).add_weight()`.
-- **Physics layers:** 1 world, 2 pods (drift-pods, hit by the hook), 3 interact (`Interactable` areas the look ray finds).
+- **Physics layers:** 1 world, 2 flotsam (drift-pods and material bundles, hit by the hook), 3 interact (`Interactable` areas the look ray finds).
+- **Building** is `RaftBuilder` (the raft's `Build` child): a grid of `Tuning.tile_size` tiles in raft-local X/Z; the slab is tiles -1..1. Plank and roof collision shapes go directly on the raft body. Recipes live in `Tuning.recipes`. Built pieces that weigh something remove their own weight in `on_cut()`.
 - Build work happens locally on Andrew's PC, never in the cloud.
 
 ## Tests
@@ -37,6 +38,8 @@ Run from `groundless/` (exit code 0 = pass):
 ```
 C:\Users\aluck\Downloads\Godot_v4.7.2-stable_win64_console.exe --headless --fixed-fps 60 res://tests/ride_test.tscn
 ```
+
+`res://tests/build_test.tscn` is the milestone 3 check (grid rules, costs, weight, walking on new planks, fixtures, roof, cutting loose, crafting, patching, sky-paddle, material flotsam).
 
 `res://tests/lift_test.tscn` is the milestone 2 check (lift, weight, controls, murk, hook, drift-pod spawning).
 
@@ -54,7 +57,9 @@ Defined in `project.godot` (physical keys):
 | `hotbar_1` … `hotbar_9` | 1 … 9 |
 | `hotbar_next` / `hotbar_prev` | Mouse wheel down / up |
 | `sprint` | Shift |
-| `use_primary` | Left mouse (throw the hook) |
+| `use_primary` | Left mouse (hook: throw; hammer: place; sky-paddle: hold to paddle) |
+| `cut_loose` | X (with the hammer) |
+| `build_menu` | Tab |
 
 Also: Esc frees the mouse, click recaptures it, F3 toggles the debug readout.
 

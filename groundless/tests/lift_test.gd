@@ -12,7 +12,7 @@ var main: Node3D
 var raft: Raft
 var lift: RaftLift
 var player: Player
-var spawner: DriftPodSpawner
+var spawner: FlotsamSpawner
 var failures: Array[String] = []
 
 
@@ -22,7 +22,7 @@ func _ready() -> void:
 	raft = main.get_node("Raft")
 	lift = raft.get_node("Lift")
 	player = main.get_node("Player")
-	spawner = main.get_node("DriftPods")
+	spawner = main.get_node("Flotsam")
 	spawner.set_physics_process(false)  # Spawn only when the test asks.
 	_run()
 
@@ -115,7 +115,7 @@ func _run() -> void:
 	await _ticks(1.0)
 	player.head.rotation.x = 0.0
 	var aim := -player.camera.global_basis.z
-	var pod := DriftPod.new()
+	var pod := Flotsam.new()
 	spawner.add_child(pod)
 	pod.global_position = player.camera.global_position + aim * 8.0
 	await get_tree().physics_frame
