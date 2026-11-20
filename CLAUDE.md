@@ -58,7 +58,8 @@ Defined in `project.godot` (physical keys):
 | `hotbar_next` / `hotbar_prev` | Mouse wheel down / up |
 | `sprint` | Shift |
 | `use_primary` | Left mouse (hook: throw; hammer: place; sky-paddle: hold to paddle) |
-| `cut_loose` | X (with the hammer) |
+| `remove_piece` | Right mouse (with the hammer: take a piece back, full refund) |
+| `cut_loose` | X (with the hammer: crisis drop, no refund) |
 | `build_menu` | Tab |
 
 Also: Esc frees the mouse, click recaptures it, F3 toggles the debug readout.

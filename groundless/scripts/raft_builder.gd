@@ -132,11 +132,11 @@ func place(id: String, tile: Vector2i, player: Player) -> bool:
 		"roof":
 			_add_roof(tile)
 		"anchor":
-			_add_fixture(tile, AnchorPoint.new(), centre)
+			_add_fixture(tile, AnchorPoint.new(), centre, id)
 		"rain_catcher":
-			_add_fixture(tile, RainCatcher.new(), centre)
+			_add_fixture(tile, RainCatcher.new(), centre, id)
 		"ballast_sack":
-			_add_fixture(tile, Sandbag.new(), centre)
+			_add_fixture(tile, Sandbag.new(), centre, id)
 	return true
 
 
@@ -145,6 +145,7 @@ func _add_plank(tile: Vector2i) -> void:
 	var centre := tile_centre(tile) + Vector3(0, -0.075, 0)
 	var mesh := Interactable.make_box(size, Color(0.5, 0.38, 0.25), centre)
 	mesh.set_meta("built", true)
+	mesh.set_meta("recipe", "plank")
 	raft.add_child(mesh)
 	var shape := _add_shape(size, centre)
 	tiles[tile] = _empty_tile(mesh)
@@ -156,6 +157,7 @@ func _add_roof(tile: Vector2i) -> void:
 	var roof := Node3D.new()
 	roof.position = tile_centre(tile)
 	roof.set_meta("built", true)
+	roof.set_meta("recipe", "roof")
 	var wood := Color(0.42, 0.33, 0.24)
 	var inset := Tuning.tile_size * 0.5 - 0.1
 	for corner in [Vector3(-inset, 0, -inset), Vector3(inset, 0, -inset), Vector3(-inset, 0, inset), Vector3(inset, 0, inset)]:
@@ -168,9 +170,10 @@ func _add_roof(tile: Vector2i) -> void:
 	lift.add_weight(Tuning.roof_weight)
 
 
-func _add_fixture(tile: Vector2i, node: Node3D, centre: Vector3) -> void:
+func _add_fixture(tile: Vector2i, node: Node3D, centre: Vector3, id: String) -> void:
 	node.position = centre
 	node.set_meta("built", true)
+	node.set_meta("recipe", id)
 	raft.add_child(node)
 	tiles[tile].fixture = node
 
@@ -265,6 +268,79 @@ func _drop_unconnected() -> void:
 	for tile in tiles.keys():
 		if not reached.has(tile):
 			_cut_plank(tile)
+
+
+# --- Removing (fixing mistakes) ----------------------------------------------------
+
+## What remove() would take off this tile ("" if nothing), and why it can't, if it can't.
+func describe_remove(tile: Vector2i) -> Dictionary:
+	var what := describe_cut(tile)
+	if what == "":
+		return {"what": "", "problem": ""}
+	var t: Dictionary = tiles[tile]
+	var node: Node3D = t.fixture if what == "fixture" else (t.roof if what == "roof" else t.floor)
+	var id: String = node.get_meta("recipe", "")
+	var problem := ""
+	if what == "plank" and _would_disconnect(tile):
+		problem = "Remove the planks beyond this one first"
+	return {"what": what, "name": Tuning.recipes[id].name if id != "" else what, "problem": problem}
+
+
+## Take the top-most built piece off a tile and give its full cost back. Nothing falls:
+## a plank that other planks depend on can't be removed (cut it loose instead).
+## A pod on a removed anchor comes back as a drift-pod. Returns true if something was removed.
+func remove(tile: Vector2i, player: Player) -> bool:
+	var info := describe_remove(tile)
+	if info.what == "" or info.problem != "":
+		return false
+	var t: Dictionary = tiles[tile]
+	var node: Node3D
+	match info.what:
+		"fixture":
+			node = t.fixture
+			if node is AnchorPoint and node.pod:
+				player.held_pods += 1
+			if node.has_method("on_cut"):
+				node.on_cut()
+			t.fixture = null
+		"roof":
+			node = t.roof
+			lift.remove_weight(Tuning.roof_weight)
+			t.roof_shape.queue_free()
+			t.roof = null
+			t.roof_shape = null
+		"plank":
+			node = t.floor
+			lift.remove_weight(Tuning.plank_weight)
+			t.shape.queue_free()
+			tiles.erase(tile)
+	var id: String = node.get_meta("recipe", "")
+	if id != "":
+		for k in Tuning.recipes[id].cost:
+			player.add_item(k, Tuning.recipes[id].cost[k])
+	node.queue_free()
+	return true
+
+
+func _would_disconnect(tile: Vector2i) -> bool:
+	var saved: Dictionary = tiles[tile]
+	tiles.erase(tile)
+	var reached := {}
+	var queue: Array[Vector2i] = []
+	for t in tiles:
+		if tiles[t].floor is String:
+			reached[t] = true
+			queue.append(t)
+	while not queue.is_empty():
+		var current: Vector2i = queue.pop_back()
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var next: Vector2i = current + d
+			if tiles.has(next) and not reached.has(next):
+				reached[next] = true
+				queue.append(next)
+	var disconnects := reached.size() < tiles.size()
+	tiles[tile] = saved
+	return disconnects
 
 
 ## Let a cut piece fall away into the sky.

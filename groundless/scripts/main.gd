@@ -79,7 +79,15 @@ func _prompt_text() -> String:
 		elif player.build_problem != "":
 			text += "\n" + player.build_problem
 		else:
-			text += "\n[Click] Place   [X] Cut loose   [Tab] Build menu"
+			text += "\n[Click] Place"
+		if player.build_tile != null:
+			var info: Dictionary = player.builder.describe_remove(player.build_tile)
+			if info.what != "":
+				if info.problem != "":
+					text += "\n%s here: %s" % [info.name, info.problem]
+				else:
+					text += "\n[Right-click] Remove %s (full refund)   [X] Cut loose" % info.name.to_lower()
+		text += "\n[Tab] Build menu"
 		return text
 	if player.selected_slot == Player.Slot.PADDLE:
 		if player.is_resting():

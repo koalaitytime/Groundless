@@ -97,6 +97,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		focused.interact(self)
 	elif event.is_action_pressed("cut_loose"):
 		cut_loose()
+	elif event.is_action_pressed("remove_piece"):
+		remove_piece()
 	elif event.is_action_pressed("hotbar_next"):
 		cycle_slot(1)
 	elif event.is_action_pressed("hotbar_prev"):
@@ -202,6 +204,14 @@ func cut_loose() -> void:
 		var tile: Variant = builder.aim_tile(camera)
 		if tile != null:
 			builder.cut(tile)
+
+
+## Hammer + right-click: take back the aimed piece with a full refund.
+func remove_piece() -> void:
+	if selected_slot == Slot.HAMMER and builder:
+		var tile: Variant = builder.aim_tile(camera)
+		if tile != null:
+			builder.remove(tile, self)
 
 
 func _update_build_preview() -> void:

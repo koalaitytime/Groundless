@@ -49,10 +49,10 @@ light_energy = 1.2
 shadow_enabled = true
 
 [node name="Raft" parent="." instance=ExtResource("2_raft")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 37, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 85, 0)
 
 [node name="Player" parent="." node_paths=PackedStringArray("home") instance=ExtResource("3_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 37.5, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 85.5, 1)
 home = NodePath("../Raft")
 
 [node name="SkyDebris" type="Node3D" parent="." node_paths=PackedStringArray("follow")]

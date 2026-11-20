@@ -49,16 +49,17 @@ func _run() -> void:
 	_check(lift_kg > weight, "starts with spare lift")
 	_check(absf(lift.get_resting_height() - raft.get_base_height()) < 3.0, "raft starts near its resting height")
 	var r0 := lift.get_resting_height()
+	var h0 := raft.get_base_height()
 	await _ticks(20.0)
 	_check(lift.get_resting_height() < r0 - 3.0, "wilting pod lowers the resting height over 20 s (%.1f -> %.1f m)" % [r0, lift.get_resting_height()])
-	_check(raft.get_base_height() < 37.0, "raft is sinking (%.1f m)" % raft.get_base_height())
+	_check(raft.get_base_height() < h0 - 1.0, "raft is sinking (%.1f m)" % raft.get_base_height())
 
 	print("Vent cord")
 	var before := lift.get_resting_height()
 	var vent: VentCord = raft.get_node("VentCord")
 	vent.interact(player)
 	var drop := before - lift.get_resting_height()
-	_check(absf(drop - Tuning.vent_pull_kg * Tuning.metres_per_kg) < 0.5, "one pull lowers resting height by about 6 m (%.2f m)" % drop)
+	_check(absf(drop - Tuning.vent_pull_kg * Tuning.metres_per_kg) < 0.5, "one pull lowers resting height by vent_pull_kg x metres_per_kg (%.2f m)" % drop)
 
 	print("Sandbag")
 	before = lift.get_resting_height()
@@ -66,7 +67,7 @@ func _run() -> void:
 	_check(bag.get_prompt(player) != "", "sandbag offers a prompt")
 	bag.interact(player)
 	var gain := lift.get_resting_height() - before
-	_check(absf(gain - Tuning.sandbag_weight * Tuning.metres_per_kg) < 0.5, "dropping it raises resting height by about 15 m (%.2f m)" % gain)
+	_check(absf(gain - Tuning.sandbag_weight * Tuning.metres_per_kg) < 0.5, "dropping it raises resting height by sandbag_weight x metres_per_kg (%.2f m)" % gain)
 	_check(bag.get_prompt(player) == "", "a dropped sandbag can't be used again")
 
 	print("Tether and refill")

@@ -5,7 +5,7 @@ extends AnimatableBody3D
 ## turns. Things standing on it ride along through the "rideable" group (see player.gd).
 
 ## Height the raft eases toward, in metres. The Lift child sets this every tick.
-@export var target_height := 40.0
+@export var target_height := 85.0
 ## Vertical bob, in metres and seconds.
 @export var bob_height := 0.12
 @export var bob_period := 6.0

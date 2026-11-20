@@ -56,7 +56,7 @@ func _ready() -> void:
 	raft.bob_period = 3.0
 	# Hold height: this test is about riding, not lift.
 	raft.get_node("Lift").process_mode = Node.PROCESS_MODE_DISABLED
-	raft.target_height = 37.0
+	raft.target_height = 85.0
 	add_child(main)
 	_next_phase()
 

@@ -56,7 +56,7 @@ func _run() -> void:
 	var wood: int = player.items.wood
 	_check(build.place("plank", Vector2i(2, 0), player), "place a plank at (2, 0)")
 	_check(is_equal_approx(lift.get_weight() - weight, Tuning.plank_weight), "plank adds 15 kg")
-	_check(absf(resting - lift.get_resting_height() - Tuning.plank_weight * Tuning.metres_per_kg) < 0.1, "plank lowers resting height by 22.5 m")
+	_check(absf(resting - lift.get_resting_height() - Tuning.plank_weight * Tuning.metres_per_kg) < 0.1, "plank lowers resting height by plank_weight x metres_per_kg")
 	_check(player.items.wood == wood - 2 and player.items.rope == 9, "plank costs 2 wood and 1 rope")
 	_check(build.placement_problem("plank", Vector2i(3, 0), player) == "", "can extend from a plank")
 	build.place("plank", Vector2i(3, 0), player)
@@ -118,6 +118,25 @@ func _run() -> void:
 	_check(not build.cut(Vector2i(1, 1)), "pre-built slab pieces can't be cut")
 	var base_weight := 200.0 + 2.0 + 10.0 + 3.0
 	_check(is_equal_approx(lift.get_weight(), base_weight), "weight is back to the starting 215 kg")
+
+	print("Removing mistakes")
+	build.place("plank", Vector2i(0, 2), player)
+	build.place("plank", Vector2i(0, 3), player)
+	build.place("anchor", Vector2i(0, 2), player)
+	player.held_pods = 1
+	build.tiles[Vector2i(0, 2)].fixture.interact(player)
+	var before_items: Dictionary = player.items.duplicate()
+	_check(build.describe_remove(Vector2i(0, 2)).what == "fixture", "remove takes the anchor first")
+	_check(build.remove(Vector2i(0, 2), player), "remove the anchor")
+	_check(player.items.wood == before_items.wood + 1 and player.items.rope == before_items.rope + 1, "anchor cost refunded in full")
+	_check(player.held_pods == 1, "its pod comes back as a drift-pod")
+	_check(build.describe_remove(Vector2i(0, 2)).problem != "", "a plank with planks beyond it can't be removed")
+	_check(not build.remove(Vector2i(0, 2), player), "remove refuses it")
+	_check(build.remove(Vector2i(0, 3), player) and build.remove(Vector2i(0, 2), player), "remove the outer plank, then the inner one")
+	_check(player.items.wood == before_items.wood + 1 + 4 and player.items.rope == before_items.rope + 1 + 2, "plank costs refunded in full")
+	_check(is_equal_approx(lift.get_weight(), base_weight), "weight is back to 215 kg")
+	_check(not build.remove(Vector2i(1, 1), player), "pre-built slab pieces can't be removed")
+	player.held_pods = 1
 
 	print("Crafting and patching")
 	_check(player.craft("patch"), "craft a patch (2 fiber, 1 drift-pod)")

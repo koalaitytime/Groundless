@@ -2,10 +2,12 @@ extends Node
 ## Autoload "Tuning". Every gameplay number in one place, so tuning never means hunting
 ## through scripts. Starting values come from docs/early-design-numbers.md.
 ## Units: metres, seconds, kg. Lift and weight share kg: a pod's lift is the kg it holds up.
+## Building pressure was relaxed after the milestone 3 playtest: pieces are lighter, pods
+## stronger, and each kg costs 1 m instead of 1.5 m.
 
 @export_group("Height")
 ## Each kg of spare lift (lift minus weight) raises the resting height by this much.
-@export var metres_per_kg := 1.5
+@export var metres_per_kg := 1.0
 ## Y of the murk's top surface. Below this is the murk.
 @export var murk_top := 0.0
 ## Lowest the raft can sink.
@@ -22,9 +24,9 @@ extends Node
 @export var vertical_smoothing := 1.5
 
 @export_group("Pods")
-@export var pod_capacity_small := 40.0
-@export var pod_capacity_medium := 80.0
-@export var pod_capacity_large := 150.0
+@export var pod_capacity_small := 50.0
+@export var pod_capacity_medium := 100.0
+@export var pod_capacity_large := 180.0
 ## Gas lost per minute, as a fraction of a full pod.
 @export var leak_healthy_per_min := 0.02
 @export var leak_damaged_per_min := 0.15
@@ -85,9 +87,9 @@ extends Node
 @export var tile_size := 1.5
 ## How far away the player can place and cut pieces, in metres.
 @export var build_reach := 6.0
-@export var plank_weight := 15.0
-@export var roof_weight := 10.0
-@export var rain_catcher_weight := 3.0
+@export var plank_weight := 6.0
+@export var roof_weight := 4.0
+@export var rain_catcher_weight := 2.0
 ## What the player wakes up with, salvaged from the slab.
 @export var starting_items := {"wood": 6, "rope": 3, "cloth": 2, "fiber": 2}
 ## Build menu. kind: floor (extends the raft), fixture (one per tile), roof (one per tile),

@@ -5,8 +5,8 @@ extends Interactable
 ## Occupied + carrying a drift-pod: refill this pod's gas instead.
 ## Damaged pod + carrying a patch: patch it.
 
-## Pod tethered here at the start. 0 = empty anchor.
-@export var start_capacity := 0.0
+## Pod tethered here at the start.
+@export_enum("none", "small", "medium", "large") var start_pod := "none"
 @export_range(0.0, 1.0) var start_gas := 1.0
 @export var start_damaged := false
 
@@ -20,8 +20,13 @@ func _ready() -> void:
 	super()
 	add_child(make_box(Vector3(0.12, 0.45, 0.12), Color(0.42, 0.33, 0.24), Vector3(0, 0.225, 0)))
 	_lift = RaftLift.find(self)
-	if start_capacity > 0.0:
-		tether(start_capacity, start_gas, start_damaged)
+	match start_pod:
+		"small":
+			tether(Tuning.pod_capacity_small, start_gas, start_damaged)
+		"medium":
+			tether(Tuning.pod_capacity_medium, start_gas, start_damaged)
+		"large":
+			tether(Tuning.pod_capacity_large, start_gas, start_damaged)
 
 
 func tether(capacity: float, gas: float, damaged := false) -> void:

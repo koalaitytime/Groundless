@@ -56,17 +56,17 @@ script = ExtResource("2_lift")
 [node name="AnchorBackLeft" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.85, 0, -1.85)
 script = ExtResource("3_anchor")
-start_capacity = 80.0
+start_pod = "medium"
 
 [node name="AnchorBackRight" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.85, 0, -1.85)
 script = ExtResource("3_anchor")
-start_capacity = 80.0
+start_pod = "medium"
 
 [node name="AnchorFrontLeft" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.85, 0, 1.85)
 script = ExtResource("3_anchor")
-start_capacity = 80.0
+start_pod = "medium"
 start_damaged = true
 
 [node name="AnchorFrontRight" type="Area3D" parent="."]
