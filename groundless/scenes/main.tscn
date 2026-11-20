@@ -1,0 +1,70 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/raft.tscn" id="2_raft"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="3_player"]
+[ext_resource type="Script" path="res://scripts/sky_debris.gd" id="4_debris"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.2, 0.14, 0.36, 1)
+sky_horizon_color = Color(0.86, 0.56, 0.4, 1)
+ground_bottom_color = Color(0.04, 0.05, 0.13, 1)
+ground_horizon_color = Color(0.5, 0.33, 0.42, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_energy = 0.8
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.58, 0.44, 0.56, 1)
+fog_density = 0.004
+fog_sky_affect = 0.35
+
+[sub_resource type="StandardMaterial3D" id="mat_murk"]
+shading_mode = 0
+albedo_color = Color(0.07, 0.09, 0.2, 1)
+
+[sub_resource type="PlaneMesh" id="mesh_murk"]
+material = SubResource("mat_murk")
+size = Vector2(3000, 3000)
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.766, -0.413, 0.492, 0, 0.766, 0.643, -0.643, -0.492, 0.587, 0, 0, 0)
+light_color = Color(1, 0.78, 0.55, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="Raft" parent="." instance=ExtResource("2_raft")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 100, 0)
+
+[node name="Player" parent="." node_paths=PackedStringArray("home") instance=ExtResource("3_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 100.5, 1)
+home = NodePath("../Raft")
+
+[node name="SkyDebris" type="Node3D" parent="." node_paths=PackedStringArray("follow")]
+script = ExtResource("4_debris")
+follow = NodePath("../Raft")
+
+[node name="Murk" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 25, 0)
+mesh = SubResource("mesh_murk")
+
+[node name="Debug" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="Debug"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 400.0
+offset_bottom = 160.0
+text = "debug"
