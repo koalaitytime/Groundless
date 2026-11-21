@@ -1,8 +1,12 @@
 class_name IslandSpawner
 extends Node3D
 ## Places islands ahead of the raft, downwind, so the drift carries the player toward them
-## (GDD "Islands and spawning"). The slice islands come in a fixed order; an island only
-## counts once the player has stood on it, so a missed island comes back (sooner).
+## (GDD "Islands and spawning", "Island types").
+##
+## Order: two teaching standard islands (a grove, then a hangroot island), then islands by
+## chance (Tuning.island_type_weights: standard, wreck, rare), and once the player has
+## visited Tuning.story_island_after_visits islands, the story island (the wreck).
+## Teaching and story islands come back if missed; random islands don't need to.
 ## Offsets follow the reachability rule:
 ##   time to pass = distance / drift speed
 ##   max sideways offset = island_offset_factor x steer speed x time to pass
@@ -11,16 +15,23 @@ extends Node3D
 
 signal island_spawned(island: Island)
 
-const SEQUENCE := ["pod_grove", "weeping_rock", "wreck"]
+const TEACHING := [{"kind": "standard", "theme": "grove"}, {"kind": "standard", "theme": "hangroot"}]
+const STORY := {"kind": "story_wreck", "theme": ""}
+const RARE_KINDS := ["rare_shell", "rare_lantern"]
 
 @export var raft: Raft
 @export var player: Player
 
-## Index into SEQUENCE of the next island the player hasn't visited.
-var sequence_index := 0
+## Teaching islands visited so far (0 to 2).
+var teaching_index := 0
+## Islands the player has stood on (story island not counted).
+var visited_count := 0
+var story_visited := false
 ## The island the player is heading for now, or null between islands.
 var current: Island
 var spawned_count := 0
+## Spec of the next island to spawn, if one is owed (a missed teaching or story island).
+var _owed: Variant = null
 
 var _timer := 3.0
 var _rng := RandomNumberGenerator.new()
@@ -36,6 +47,8 @@ func _physics_process(delta: float) -> void:
 		return
 	if current != null and is_instance_valid(current):
 		if _is_done_with(current):
+			if not current.visited and _must_return(current):
+				_owed = {"kind": current.kind, "theme": current.theme}
 			_timer = Tuning.island_next_delay if current.visited else Tuning.island_missed_delay
 			current = null
 	else:
@@ -44,6 +57,10 @@ func _physics_process(delta: float) -> void:
 		if _timer <= 0.0:
 			spawn_next()
 	_despawn_far()
+
+
+func _must_return(island: Island) -> bool:
+	return island.kind == "story_wreck" or island.theme != ""
 
 
 ## The raft has left this island behind (visited or not) and isn't anchored to it.
@@ -58,14 +75,43 @@ func _is_done_with(island: Island) -> bool:
 	return behind or to_island.length() > Tuning.island_spawn_distance * 1.5
 
 
+## What the next island will be: {"kind": String, "theme": String}.
+func next_spec() -> Dictionary:
+	if _owed != null:
+		return _owed
+	if teaching_index < TEACHING.size():
+		return TEACHING[teaching_index]
+	if not story_visited and visited_count >= Tuning.story_island_after_visits:
+		return STORY
+	return random_spec()
+
+
+func random_spec() -> Dictionary:
+	var weights: Dictionary = Tuning.island_type_weights
+	var total := 0.0
+	for k in weights:
+		total += weights[k]
+	var roll := _rng.randf() * total
+	var pick := "standard"
+	for k in weights:
+		roll -= weights[k]
+		if roll <= 0.0:
+			pick = k
+			break
+	if pick == "rare":
+		return {"kind": RARE_KINDS[_rng.randi_range(0, RARE_KINDS.size() - 1)], "theme": ""}
+	return {"kind": pick, "theme": ""}
+
+
+## Kept for older callers: the kind of the next island.
 func next_kind() -> String:
-	if sequence_index < SEQUENCE.size():
-		return SEQUENCE[sequence_index]
-	return SEQUENCE[_rng.randi_range(0, SEQUENCE.size() - 1)]
+	return next_spec().kind
 
 
 ## Spawn the next island ahead of the raft. Returns it.
 func spawn_next() -> Island:
+	var spec := next_spec()
+	_owed = null
 	var first := spawned_count == 0
 	var distance := Tuning.island_first_spawn_distance if first else Tuning.island_spawn_distance
 	var drift := raft.get_horizontal_velocity()
@@ -78,7 +124,9 @@ func spawn_next() -> Island:
 	var max_vertical := Tuning.island_first_vertical_offset if first else Tuning.island_max_vertical_offset
 
 	var island := Island.new()
-	island.kind = next_kind()
+	island.kind = spec.kind
+	island.theme = spec.theme
+	island.island_seed = _rng.randi() | 1
 	add_child(island)
 	var position_ := raft.global_position + ahead * distance + side * _rng.randf_range(-max_side, max_side)
 	position_.y = clampf(raft.get_base_height() + _rng.randf_range(-max_vertical, max_vertical), Tuning.murk_top + 15.0, Tuning.ceiling - 20.0)
@@ -98,8 +146,12 @@ func max_side_offset(time_to_pass: float) -> float:
 
 
 func _on_boarded(island: Island) -> void:
-	if sequence_index < SEQUENCE.size() and island.kind == SEQUENCE[sequence_index]:
-		sequence_index += 1
+	if island.kind == "story_wreck":
+		story_visited = true
+		return
+	visited_count += 1
+	if teaching_index < TEACHING.size() and island.theme == TEACHING[teaching_index].theme:
+		teaching_index += 1
 
 
 func _despawn_far() -> void:

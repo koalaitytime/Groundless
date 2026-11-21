@@ -103,21 +103,34 @@ func _keep_clear_of_islands() -> void:
 	var build := get_node_or_null("Build") as RaftBuilder
 	for node in get_tree().get_nodes_in_group("island"):
 		var island := node as Island
-		var r := island.radius_at(_base_position.y + 0.4)
-		if r <= 0.0:
+		if absf(island.global_position.y - _base_position.y) > 200.0:
 			continue
-		var away := Vector3(_base_position.x - island.global_position.x, 0.0, _base_position.z - island.global_position.z)
-		var distance := away.length()
-		var normal := away.normalized() if distance > 0.01 else Vector3.RIGHT
-		# How far the raft's floor reaches toward the island.
-		var reach := build.extent_along(global_basis.inverse() * -normal) if build else 2.25
-		var need := r + reach
-		if distance >= need:
-			continue
-		_base_position += normal * (need - distance)
-		var into := velocity.dot(-normal)
-		if into > 0.0:
-			velocity += normal * into
+		# Sample the slab's underside, the deck and head height (roofs, the player).
+		for dy in [-0.6, 0.2, 1.5]:
+			for circle in island.solid_circles_at(_base_position.y + dy):
+				_push_out_of(circle.centre, circle.radius, build)
+
+
+func _push_out_of(centre: Vector3, r: float, build: RaftBuilder) -> void:
+	var away := Vector3(_base_position.x - centre.x, 0.0, _base_position.z - centre.z)
+	var distance := away.length()
+	var normal := away.normalized() if distance > 0.01 else Vector3.RIGHT
+	# How far the raft's floor reaches toward the obstacle.
+	var reach := build.extent_along(global_basis.inverse() * -normal) if build else 2.25
+	var need := r + reach
+	if distance >= need:
+		return
+	_base_position += normal * (need - distance)
+	var into := velocity.dot(-normal)
+	if into > 0.0:
+		# Like air around a rock: the push into the island turns into a slide around it,
+		# so a raft blown straight at an island doesn't stay pinned there.
+		velocity += normal * into
+		var tangent := normal.cross(Vector3.UP)
+		var side := signf(velocity.dot(tangent))
+		if side == 0.0:
+			side = 1.0
+		velocity += tangent * side * into * 0.8
 
 
 ## Height without the bob.

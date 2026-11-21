@@ -157,6 +157,10 @@ extends Node
 @export var island_first_vertical_offset := 4.0
 ## Seconds after an island is passed or left before the next one appears.
 @export var island_next_delay := 20.0
+## Island types by chance, after the two teaching islands (GDD "Island types").
+@export var island_type_weights := {"standard": 0.79, "wreck": 0.17, "rare": 0.04}
+## The story island (the wreck) appears once the player has visited this many islands.
+@export var story_island_after_visits := 3
 ## A missed island comes back sooner.
 @export var island_missed_delay := 8.0
 ## Reveal: an island is a dark silhouette beyond the far distance, full colour inside near.

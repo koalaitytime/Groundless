@@ -30,11 +30,11 @@ The first build is a vertical slice of the opening area only: 15 to 30 minutes o
 - Learn the hook and catch drift-pods to stop the fall
 - Build 4 to 6 pieces: plank, pod tether, patch, rain catcher, sky-paddle, roof
 - Thirst and hunger
-- Three islands: the pod grove, the weeping rock, the wreck
+- Islands of every kind (see Island types): two teaching standard islands (a pod grove and a hangroot island), more standard islands, the odd wreck or rare encounter, and one story island, the wreck
 - One caustic rain storm that makes the first roof matter
 - One creature: the pod-leech
 - One distant shadow sighting
-- Ends at the wreck, when the player finds something that points onward
+- Ends at the wreck story island, when the player finds something that points onward
 
 ### Cut list
 
@@ -44,7 +44,7 @@ These stay out of the slice. Anything added later must earn its way in.
 - Heavy combat (light combat against shader-animated creatures only)
 - Multiplayer
 - Day/night cycle (permanent dusk for now)
-- Procedurally generated islands (handmade islands, randomly placed)
+- Fully generated island terrain (standard islands are assembled from a kit of handmade landforms instead; see Island types)
 - Cutscenes
 - Save system (the slice is short enough to play in one sitting)
 - Warmth stat and the high-air band
@@ -220,13 +220,27 @@ The vast shadows are never fought. They stay far off and unexplained in the slic
 
 Islands are handmade and placed by a spawner. Spawn range grows with the player's steering, so islands start straight ahead and move further off the path as navigation improves.
 
+### Island types
+
+Islands should feel lively and worth exploring: elevation, caves, water and real landforms, not just a few trees on a flat top. There are four kinds (decided Nov 21, 2026):
+
+| Type | Share of spawns | Size | What it is |
+| --- | --- | --- | --- |
+| Standard | Most (about 79%) | Medium, 40 to 80 m across | Assembled from a seed: an irregular base shape plus 3 to 5 landforms from the kit. The everyday island. |
+| Wreck | About 1 in 6 (17%) | Small | Handmade. Salvage-heavy, with notes and red human traces. |
+| Rare encounter | 3 to 5% (4%) | Varies | Handmade one-offs that are memorable on sight, such as a shell shed by a giant or a lone lantern tree. |
+| Story island | Placed by progress, not chance | Large | Handmade. Carries the story beats; the slice ends on one. |
+
+**The landform kit.** Standard islands are built from handmade pieces, so variety comes from combination while every piece is still authored: hill, cliff shelf with a ramp, cave mouth, spring with a pond and a waterfall over the edge, grove (bindwood and pod vines), rock arch, and a hangroot side. Each island's seed picks its base shape (two to four overlapping lobes) and its landforms. Art later replaces each kit piece once, and every island benefits.
+
 ### Slice islands
 
-1. **Pod grove:** overgrown with pod vines; ripe pods break loose and drift downwind. Teaches the hook.
-2. **Weeping rock:** a small stone with a huge curtain of hangroot. Fiber and rope.
-3. **The wreck:** a broken airship deck snagged on a rock spire. Planks, cloth, a tool, a note, and the item that ends the slice.
+1. **Pod grove:** the first standard island always has a grove of pod vines; ripe pods break loose and drift downwind. Teaches the hook.
+2. **Hangroot island:** the second always has a hangroot side and long root curtains. Fiber and rope.
+3. Random islands follow by the shares above.
+4. **The wreck (story island):** after the player has visited three islands, a large island appears with a broken airship deck snagged on a rock spire. Planks, cloth, a tool, a note, and the item that ends the slice.
 
-The first two or three appear in a fixed order to teach the paddle, hook and vent cord. Later islands come from a pool of 6 to 8 handmade islands in random order and position.
+Teaching islands and the story island come back if missed; random islands don't need to.
 
 ### Reachability rule
 
@@ -387,9 +401,9 @@ Build it ugly first: mechanics are proven with grey boxes before any final art. 
 1. **Float and drift.** Grey slab, player walks on it while it drifts on the wind. *Done when:* walking on the moving raft never glitches.
 2. **Hook, pods and lift.** Catch drift-pods, tether them, watch the resting height change; vent cord and ballast work. *Done when:* staying afloat feels tense but fair.
 3. **Building.** Grid placement, the slice build pieces, weight adding up. *Done when:* every new plank feels like a cost.
-4. **Islands and anchoring.** Spawner, reachability rules, reveal shader, hook anchoring, walking on islands. *Done when:* the player can reliably find and reach all three slice islands.
+4. **Islands and anchoring.** Spawner, reachability rules, reveal shader, hook anchoring, walking on islands. *Done when:* the player can reliably find and reach the teaching islands and the story island.
 5. **Survival, storm and pod-leech.** Thirst, hunger, falling, caustic rain, the roof, the creature. *Done when:* the full 15 to 30 minute loop plays start to finish in grey boxes.
-6. **Art and audio pass.** Real assets through the pipeline, fog, painterly filter, sound. *Done when:* a screenshot holds up next to the reference image.
+6. **Art and audio pass.** Real assets through the pipeline, fog, painterly filter, sound, and a living sky: flocks, drifting creatures and wind streaks so the open air feels alive between islands. *Done when:* a screenshot holds up next to the reference image.
 
 ## Open questions
 

@@ -63,25 +63,44 @@ func cast_off() -> void:
 	cast_off_done.emit()
 
 
-## Where the raft's centre should sit: its nearest edge anchor_gap from the island's lip.
+## Where the raft's centre should sit: its nearest edge anchor_gap outside the island's
+## outline (the union of its lobes), at the spot on that outline closest to the raft.
 func target_position() -> Vector3:
-	var centre := island.global_position
-	var away := Vector3(raft.global_position.x - centre.x, 0.0, raft.global_position.z - centre.z)
-	var direction := away.normalized() if away.length() > 0.01 else Vector3.RIGHT
 	var build := raft.get_node("Build") as RaftBuilder
-	var local_dir := raft.global_basis.inverse() * -direction
-	var reach := build.extent_along(local_dir)
-	var target := centre + direction * (island.radius + Tuning.anchor_gap + reach)
-	target.y = raft.global_position.y
-	return target
+	var lobes := island.world_lobes()
+	var best := raft.global_position
+	var best_d := INF
+	for lobe in lobes:
+		var away := Vector3(raft.global_position.x - lobe.centre.x, 0.0, raft.global_position.z - lobe.centre.z)
+		var direction := away.normalized() if away.length() > 0.01 else Vector3.RIGHT
+		var reach := build.extent_along(raft.global_basis.inverse() * -direction)
+		var candidate: Vector3 = lobe.centre + direction * (lobe.radius + Tuning.anchor_gap + reach)
+		# Skip spots that would put the raft inside another lobe.
+		var blocked := false
+		for other in lobes:
+			if other == lobe:
+				continue
+			var d := Vector2(candidate.x - other.centre.x, candidate.z - other.centre.z).length()
+			if d < other.radius + reach - 0.05:
+				blocked = true
+				break
+		var dist := Vector2(candidate.x - raft.global_position.x, candidate.z - raft.global_position.z).length()
+		if not blocked and dist < best_d:
+			best_d = dist
+			best = candidate
+	best.y = raft.global_position.y
+	return best
 
 
-## Gap between the raft's nearest floor edge and the island's lip, in metres.
+## Gap between the raft's nearest floor edge and the island's outline, in metres.
 func edge_gap() -> float:
-	var to_raft := Vector3(raft.global_position.x - island.global_position.x, 0.0, raft.global_position.z - island.global_position.z)
 	var build := raft.get_node("Build") as RaftBuilder
-	var reach := build.extent_along(raft.global_basis.inverse() * -to_raft.normalized())
-	return to_raft.length() - island.radius - reach
+	var gap := INF
+	for lobe in island.world_lobes():
+		var to_raft := Vector3(raft.global_position.x - lobe.centre.x, 0.0, raft.global_position.z - lobe.centre.z)
+		var reach := build.extent_along(raft.global_basis.inverse() * -to_raft.normalized())
+		gap = minf(gap, to_raft.length() - lobe.radius - reach)
+	return gap
 
 
 func _physics_process(_delta: float) -> void:
@@ -102,7 +121,14 @@ func _place_cleat() -> void:
 	if cleat == null:
 		return
 	var build := raft.get_node("Build") as RaftBuilder
-	var toward := raft.global_basis.inverse() * (island.global_position - raft.global_position)
+	var nearest := island.global_position
+	var nearest_d := INF
+	for lobe in island.world_lobes():
+		var d: float = lobe.centre.distance_to(raft.global_position) - lobe.radius
+		if d < nearest_d:
+			nearest_d = d
+			nearest = lobe.centre
+	var toward := raft.global_basis.inverse() * (nearest - raft.global_position)
 	toward.y = 0.0
 	toward = toward.normalized()
 	cleat.position = toward * (build.extent_along(toward) - 0.25)
