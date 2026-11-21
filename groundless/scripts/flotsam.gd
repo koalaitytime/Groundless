@@ -91,6 +91,13 @@ static func make_visual(kind: String) -> MeshInstance3D:
 			var plane := PlaneMesh.new()
 			plane.size = Vector2(0.8, 0.6)
 			mesh = plane
+		"fungus":
+			material.albedo_color = Color(0.85, 0.62, 0.42)
+			var cap := SphereMesh.new()
+			cap.radius = 0.3
+			cap.height = 0.3
+			cap.is_hemisphere = true
+			mesh = cap
 		_:  # fiber
 			material.albedo_color = Color(0.45, 0.55, 0.3)
 			var bundle := CylinderMesh.new()

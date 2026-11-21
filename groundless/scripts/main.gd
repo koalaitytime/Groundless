@@ -21,13 +21,40 @@ const FOG_COLOUR_MURK := Color(0.08, 0.1, 0.22)
 
 
 @onready var message_label: Label = $Hud/Message
+@onready var stats_label: Label = $Hud/Stats
+@onready var vignette: ColorRect = $Hud/Vignette
+@onready var fade: ColorRect = $Hud/Fade
+@onready var storm: Storm = $Storm
+@onready var sun: DirectionalLight3D = $Sun
+
+## Fog colour and light while a storm is on.
+const FOG_COLOUR_STORM := Color(0.42, 0.46, 0.32)
 
 var _message_time := 0.0
+var _sun_energy := 1.0
 
 
 func _ready() -> void:
 	add_to_group("hud")
 	build_menu.player = player
+	_sun_energy = sun.light_energy
+	storm.warning_started.connect(func(): show_message("The air turns sharp and sour, and the sky yellows.\nCaustic rain is coming. Get a roof over your head, and over your pods.", 10.0))
+	storm.rain_started.connect(func(): show_message("The rain burns.", 4.0))
+	storm.cleared.connect(func(): show_message("The storm passes.", 4.0))
+	player.survival.passed_out.connect(_on_passed_out)
+	player.survival.woke_up.connect(_on_woke_up)
+
+
+func _on_passed_out(reason: String) -> void:
+	var tween := create_tween()
+	tween.tween_property(fade, "color:a", 1.0, 1.2)
+
+
+func _on_woke_up(reason: String) -> void:
+	var text := "You come to on the raft, cold, your pack lighter." if reason == "fell" else "You wake on the raft, aching, your pack lighter."
+	show_message(text, 5.0)
+	var tween := create_tween()
+	tween.tween_property(fade, "color:a", 0.0, 1.5)
 
 
 ## Show a message (a note, the ending) in the middle of the screen for a while.
@@ -48,9 +75,15 @@ func _process(delta: float) -> void:
 
 	# Fog thickens as the camera sinks toward and into the murk.
 	var depth := clampf((Tuning.murk_top + 15.0 - player.camera.global_position.y) / 30.0, 0.0, 1.0)
-	environment.fog_density = lerpf(FOG_CLEAR, FOG_MURK, depth * depth)
-	environment.fog_light_color = FOG_COLOUR_CLEAR.lerp(FOG_COLOUR_MURK, depth)
+	environment.fog_density = lerpf(FOG_CLEAR, FOG_MURK, depth * depth) + storm.strength * 0.006
+	environment.fog_light_color = FOG_COLOUR_CLEAR.lerp(FOG_COLOUR_STORM, storm.strength * 0.7).lerp(FOG_COLOUR_MURK, depth)
+	sun.light_energy = _sun_energy * (1.0 - storm.strength * 0.55)
 
+	# Survival, shown minimally: thirst and hunger as short bars; health only as a red edge.
+	var s := player.survival
+	stats_label.text = "Thirst  %s\nHunger  %s" % [_bar(s.thirst), _bar(s.hunger)]
+	stats_label.modulate = Color(1, 0.6, 0.5) if s.thirst < 20.0 or s.hunger < 20.0 else Color(1, 1, 1, 0.8)
+	vignette.color.a = clampf((100.0 - s.health) / 100.0, 0.0, 1.0) * 0.45
 	prompt_label.text = _prompt_text()
 	carried_label.text = _inventory_text()
 	hotbar_label.text = _hotbar_text()
@@ -83,12 +116,22 @@ func _process(delta: float) -> void:
 		]
 
 
+func _bar(value: float) -> String:
+	var filled := roundi(value / 10.0)
+	return "|".repeat(filled) + ".".repeat(10 - filled)
+
+
 func _island_debug() -> String:
 	var islands: IslandSpawner = $Islands
 	if islands.current == null:
-		return "\nNext island soon (%s)" % islands.next_kind()
+		return "\nNext island soon (%s)%s" % [islands.next_kind(), _storm_debug()]
 	var to := islands.current.global_position - raft.global_position
-	return "\nIsland %s: %.0f m away, lip %+.1f m%s" % [islands.current.kind, Vector2(to.x, to.z).length(), to.y, "  visited" if islands.current.visited else ""]
+	return _storm_debug() + "\nIsland %s: %.0f m away, lip %+.1f m%s" % [islands.current.kind, Vector2(to.x, to.z).length(), to.y, "  visited" if islands.current.visited else ""]
+
+
+func _storm_debug() -> String:
+	var phase: String = ["clear", "WARNING", "RAIN"][storm.phase]
+	return "\nStorm: %s, %.0f s   Health %.0f" % [phase, storm.timer, player.survival.health]
 
 
 func _prompt_text() -> String:
@@ -120,6 +163,8 @@ func _prompt_text() -> String:
 		if player.is_resting():
 			return "Too tired to paddle..."
 		return "Hold [Click] to paddle the way you face  (%d%%)" % roundi(100.0 * player.stamina / Tuning.paddle_stamina)
+	if player.focused_leech:
+		return "[E] Tear the pod-leech off"
 	if player.focused_flotsam:
 		return "[E] Grab " + player.focused_flotsam.describe()
 	if player.selected_slot == Player.Slot.HOOK and player.hook_charge >= 0.0:
@@ -130,10 +175,12 @@ func _prompt_text() -> String:
 
 func _inventory_text() -> String:
 	var parts: Array[String] = []
-	for k in ["wood", "rope", "cloth", "fiber", "pod", "patch"]:
+	for k in ["wood", "rope", "cloth", "fiber", "pod", "patch", "fungus"]:
 		var n: int = player.items.get(k, 0)
 		if n > 0:
 			parts.append("%s %d" % ["drift-pod" if k == "pod" else k, n])
+	if player.items.get("fungus", 0) > 0:
+		parts.append("[F] eat")
 	return "   ".join(parts)
 
 

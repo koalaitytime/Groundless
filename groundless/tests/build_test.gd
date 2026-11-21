@@ -181,7 +181,7 @@ func _run() -> void:
 	var kinds := {}
 	for i in 200:
 		kinds[spawner._pick_material()] = true
-	_check(kinds.size() == 4, "all four materials drift in (%s)" % ", ".join(kinds.keys()))
+	_check(kinds.size() == Tuning.flotsam_kind_weights.size(), "every material kind drifts in (%s)" % ", ".join(kinds.keys()))
 
 	_report()
 

@@ -9,6 +9,8 @@ extends Node
 @export var gust_strength := 0.15
 
 var _time := 0.0
+## 0..1, set by the Storm: stronger, swung wind.
+var storm_strength := 0.0
 
 
 func _physics_process(delta: float) -> void:
@@ -23,4 +25,8 @@ func velocity_at(height: float) -> Vector3:
 	var speed := lerpf(Tuning.drift_speed, Tuning.murk_drift_speed, murk_blend)
 	speed *= 1.0 + speed_variation * sin(height * 0.013)
 	var gust := 1.0 + gust_strength * sin(_time * 0.37) * sin(_time * 0.11 + 1.3)
+	if storm_strength > 0.0:
+		speed = lerpf(speed, Tuning.storm_drift_speed, storm_strength)
+		angle += deg_to_rad(Tuning.storm_wind_turn_degrees) * storm_strength
+		gust += storm_strength * 0.3 * sin(_time * 1.7)
 	return Vector3(cos(angle), 0.0, sin(angle)) * speed * gust

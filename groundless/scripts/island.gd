@@ -295,6 +295,10 @@ func _add_hangroot(edge: Dictionary, length: float) -> void:
 	ladder.size = Vector3(2.6, length + 0.4, 1.8)
 	ladder.position = Vector3(0, -length * 0.5 + 0.2, 0.5)
 	holder.add_child(ladder)
+	# Shelf fungus grows on the rock under the lip: climb down the roots to reach it.
+	var fungus := _resource({"fungus": 1}, 2, "shelf fungus", edge.point + Vector3(cos(edge.angle), 0, sin(edge.angle)) * 0.2 + Vector3(0, -length * 0.45, 0), Vector3(1.6, 1.0, 1.6), Vector3(0, 0.0, 0))
+	var shelf := _cylinder(0.6, 0.5, 0.15, Color(0.85, 0.62, 0.42), Vector3(0, 0, 0), fungus)
+	shelf.scale = Vector3(1.2, 1.0, 0.8)
 	# Gather fiber and rope where the roots meet the lip.
 	var node := _resource({"fiber": 2, "rope": 1}, 2, "hangroot", edge.point - Vector3(cos(edge.angle), 0, sin(edge.angle)) * 1.0, Vector3(1.4, 1.0, 1.4), Vector3(0, 0.5, 0))
 	_box(Vector3(1.0, 0.35, 1.0), roots, Vector3(0, 0.17, 0), node)
@@ -435,6 +439,8 @@ func _place_landform(type: String) -> void:
 			_box(Vector3(9.0, 2.0, 7.5), ROCK, Vector3(0, 3.5, 0), holder, true)
 			var cache := _resource({"rope": 1, "cloth": 1}, 2, "old cache", holder.transform * Vector3(0, 0, -1.4), Vector3(1.0, 0.8, 0.8), Vector3(0, 0.4, 0))
 			_box(Vector3(0.8, 0.5, 0.6), WOOD.darkened(0.3), Vector3(0, 0.25, 0), cache)
+			var cave_fungus := _resource({"fungus": 1}, 3, "shelf fungus", holder.transform * Vector3(-1.2, 1.2, -1.8), Vector3(1.0, 0.8, 0.8), Vector3(0, 0.0, 0))
+			_cylinder(0.45, 0.35, 0.12, Color(0.85, 0.62, 0.42), Vector3.ZERO, cave_fungus)
 			features.append({"centre": spot, "radius": 5.0, "height": 4.5, "type": type})
 		"spring":
 			var spot: Variant = _free_spot(3.0, 4.0)
@@ -450,6 +456,11 @@ func _place_landform(type: String) -> void:
 			pond_instance.position = spot + Vector3(0, 0.04, 0)
 			add_child(pond_instance)
 			_cylinder(3.0, 3.1, 0.35, ROCK.lightened(0.1), spot + Vector3(0, 0.0, 0))
+			var water := SpringWater.new()
+			water.hit_size = Vector3(5.0, 0.6, 5.0)
+			water.hit_offset = Vector3(0, 0.3, 0)
+			water.position = spot
+			add_child(water)
 			# Stream to the nearest edge, then a waterfall that never lands.
 			var edge := _nearest_edge(spot)
 			var to_edge: Vector3 = edge.point - spot

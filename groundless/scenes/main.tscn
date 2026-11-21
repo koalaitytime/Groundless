@@ -7,6 +7,8 @@
 [ext_resource type="Script" path="res://scripts/flotsam_spawner.gd" id="5_spawner"]
 [ext_resource type="Script" path="res://scripts/build_menu.gd" id="6_menu"]
 [ext_resource type="Script" path="res://scripts/island_spawner.gd" id="7_islands"]
+[ext_resource type="Script" path="res://scripts/storm.gd" id="8_storm"]
+[ext_resource type="Script" path="res://scripts/leech_spawner.gd" id="9_leech"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.2, 0.14, 0.36, 1)
@@ -69,6 +71,15 @@ script = ExtResource("7_islands")
 raft = NodePath("../Raft")
 player = NodePath("../Player")
 
+[node name="Storm" type="Node3D" parent="." node_paths=PackedStringArray("raft", "player")]
+script = ExtResource("8_storm")
+raft = NodePath("../Raft")
+player = NodePath("../Player")
+
+[node name="Leeches" type="Node3D" parent="." node_paths=PackedStringArray("raft")]
+script = ExtResource("9_leech")
+raft = NodePath("../Raft")
+
 [node name="Murk" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
 mesh = SubResource("mesh_murk")
@@ -83,6 +94,22 @@ offset_bottom = 260.0
 text = "debug"
 
 [node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="Vignette" type="ColorRect" parent="Hud"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.6, 0.05, 0.02, 0)
+
+[node name="Stats" type="Label" parent="Hud"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -64.0
+offset_right = 320.0
+offset_bottom = -16.0
 
 [node name="Crosshair" type="Label" parent="Hud"]
 anchors_preset = 8
@@ -147,3 +174,10 @@ offset_right = 380.0
 offset_bottom = 260.0
 horizontal_alignment = 1
 autowrap_mode = 3
+
+[node name="Fade" type="ColorRect" parent="Hud"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0)

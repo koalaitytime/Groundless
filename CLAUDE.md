@@ -32,6 +32,9 @@ A floating-raft survival game in Godot 4.7 (GDScript, Forward+, Jolt Physics). T
 - **Islands** are `Island` (StaticBody3D, grey-box built in code; origin = lip height, tops at Y 0). Kinds: `standard` (assembled from `island_seed`: 2 to 4 overlapping lobes plus 3 to 5 landforms from the kit: hill, cliff, cave, spring, grove, arch, and hangroot sides; `theme` forces grove or hangroot for the teaching islands), `wreck`, `rare_shell`, `rare_lantern`, `story_wreck`. Shapes are exposed as circles (`solid_circles_at`, `world_lobes`) for raft collision and mooring. `IslandSpawner` (the `Islands` node, in the `recentre` group): two teaching islands, then `Tuning.island_type_weights`, then the story island after `story_island_after_visits`. Every island mesh uses `shaders/island_reveal.gdshader` with an instance `reveal` uniform. The raft slides around islands via `Raft._keep_clear_of_islands()`.
 - **Anchoring** is `RaftAnchor` (the raft's `Anchor` child): the hook hitting an `Island` anchors; the raft is moored: reeled to `anchor_gap` from the lip, hauled level with the lip whatever its lift (in `RaftLift`), and held still (no bob or sway) so the player walks across; `AnchorCleat` casts off and lift takes over again. `Tuning.leak_while_anchored` is on trial.
 - **Boarding:** Space at a ledge 0.6 to 1.5 m above the feet mantles (code-driven); `Ladder` volumes (hangroot) are climbable.
+- **Survival** is `Survival` (the player's `Survival` child): thirst, hunger, health; `black_out()` fades, drops `wake_item_loss` of carried materials and wakes the player on the raft (falling off and health 0 both use it).
+- **Storm** is the `Storm` node (group `storm`): clear, warning, rain. Rain burns the player without cover overhead (ray up), drains pods whose anchor tile has no roof, fills rain catchers, and sets `Wind.storm_strength`. Blacking out ends the rain.
+- **Pod-leech** is `PodLeech` (layer 2, spawned by `LeechSpawner`, the `Leeches` node): swims to a pod, latches and drains it; `hit()` from the hook or E knocks it off, `Tuning.leech_hits` pop it.
 - Build work happens locally on Andrew's PC, never in the cloud.
 
 ## Tests
@@ -41,6 +44,8 @@ Run from `groundless/` (exit code 0 = pass):
 ```
 C:\Users\aluck\Downloads\Godot_v4.7.2-stable_win64_console.exe --headless --fixed-fps 60 res://tests/ride_test.tscn
 ```
+
+`res://tests/survival_test.tscn` is the milestone 5 check (thirst, hunger, health, drinking, eating, falling off, the storm's warning, burn, pod damage, roof shelter and wind, the pod-leech).
 
 `res://tests/island_test.tscn` is the milestone 4 check (spawning order and reachability, reveal, raft vs islands, hook anchoring, reeling, rope height limit, leaking while anchored, mantle, hangroot climb, walking back aboard, cast off, missed islands, recentring, the wreck's ending).
 
@@ -60,7 +65,9 @@ Defined in `project.godot` (physical keys):
 | --- | --- |
 | `move_forward` / `move_back` / `move_left` / `move_right` | W / S / A / D |
 | `jump` | Space (also mantles onto a ledge 0.6 to 1.5 m up, and climbs hangroot) |
-| `interact` | E (use things; grab flotsam within reach) |
+| `interact` | E (use things; grab flotsam within reach; tear off a pod-leech) |
+| `interact_alt` | Q (second action, e.g. dump a rain catcher) |
+| `eat` | F (eat a shelf fungus) |
 | `hotbar_1` … `hotbar_9` | 1 … 9 |
 | `hotbar_next` / `hotbar_prev` | Mouse wheel down / up |
 | `sprint` | Shift |

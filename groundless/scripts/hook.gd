@@ -92,6 +92,8 @@ func _fly(delta: float) -> void:
 		if item and not item.hooked:
 			hooked_item = item
 			item.hooked = true
+		elif hit.collider is PodLeech:
+			hit.collider.hit()
 		elif hit.collider is Island:
 			# Hooked an island: tie the raft to it.
 			var anchor := _player.home.get_node_or_null("Anchor") as RaftAnchor if _player.home else null

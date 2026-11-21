@@ -31,6 +31,11 @@ func interact(_player: Player) -> void:
 	pass
 
 
+## Second action (Q). Most things don't have one.
+func alt_interact(_player: Player) -> void:
+	pass
+
+
 static func make_box(size: Vector3, colour: Color, offset := Vector3.ZERO) -> MeshInstance3D:
 	var mesh := BoxMesh.new()
 	mesh.size = size

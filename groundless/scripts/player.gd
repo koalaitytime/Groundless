@@ -49,6 +49,10 @@ var paddling := false
 ## Tests set this to paddle without the mouse.
 var paddle_override := false
 var builder: RaftBuilder
+## Thirst, hunger and health.
+var survival: Survival
+## A pod-leech within reach that the player is looking at, or null.
+var focused_leech: PodLeech
 ## Climbing a ladder (hangroot) right now.
 var climbing := false
 ## Mantling up onto a ledge right now (code-driven, no animation).
@@ -82,6 +86,9 @@ func _ready() -> void:
 	WorldOrigin.recentred.connect(_on_recentred)
 	hook = Hook.new()
 	add_child(hook)
+	survival = Survival.new()
+	survival.name = "Survival"
+	add_child(survival)
 	items = Tuning.starting_items.duplicate()
 	for k in ["pod", "patch", "sky_paddle"]:
 		items[k] = 0
@@ -106,8 +113,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		use_primary()
 	elif event.is_action_released("use_primary"):
 		release_primary()
+	elif event.is_action_pressed("interact") and focused_leech:
+		focused_leech.hit()
 	elif event.is_action_pressed("interact") and focused_flotsam:
 		grab_flotsam()
+	elif event.is_action_pressed("interact_alt") and focused:
+		focused.alt_interact(self)
+	elif event.is_action_pressed("eat"):
+		survival.eat_fungus()
 	elif event.is_action_pressed("interact") and focused:
 		focused.interact(self)
 	elif event.is_action_pressed("cut_loose"):
@@ -322,10 +335,13 @@ func _update_focus() -> void:
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	focused = null
 	focused_flotsam = null
+	focused_leech = null
 	if hit.is_empty():
 		return
 	var near := from.distance_to(hit.position)
-	if hit.collider is Flotsam and not hit.collider.hooked and near <= Tuning.grab_reach:
+	if hit.collider is PodLeech and near <= Tuning.grab_reach:
+		focused_leech = hit.collider
+	elif hit.collider is Flotsam and not hit.collider.hooked and near <= Tuning.grab_reach:
 		focused_flotsam = hit.collider
 	elif hit.collider is Interactable and near <= reach:
 		focused = hit.collider
@@ -455,10 +471,11 @@ func _update_mantle(delta: float) -> void:
 
 
 func _check_fall() -> void:
-	if home == null or ride_body != null:
+	if home == null or ride_body != null or survival.out_cold:
 		return
 	if global_position.y < home.global_position.y - fall_reset_depth:
-		respawn()
+		# Falling off: black out and wake on the raft (GDD "Falling off").
+		survival.black_out("fell")
 
 
 func respawn() -> void:

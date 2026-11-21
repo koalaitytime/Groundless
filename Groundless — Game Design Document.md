@@ -175,7 +175,7 @@ The slice tracks two stats, thirst and hunger. Warmth arrives later with the hig
 
 - **Thirst:** rain catchers and mist fans. Stored water competes with ballast.
 - **Hunger:** shelf fungus at first, plus fungus that grows on the raft after spore drift (post-slice).
-- **Falling off:** the screen fades and the player wakes back on the raft, cold, having lost whatever they were carrying. A safety tether unlocks later. A more creative version is an open question.
+- **Falling off:** the screen fades and the player wakes back on the raft, cold, having lost half of what they were carrying (softened Nov 21, 2026; tunable). Running out of health does the same. A safety tether unlocks later. A more creative version is an open question.
 - **The murk:** soft failure, as described under Lift and weight.
 
 ## Hazards and weather

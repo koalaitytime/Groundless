@@ -1,7 +1,8 @@
 class_name RainCatcher
 extends Interactable
-## A cloth basin on legs. Collects water (rain comes with the storm in milestone 5).
-## Water weighs 1 kg per litre, so a full catcher is ballast you can dump.
+## A cloth basin on legs. Collects water from caustic rain and, slowly, from passing mist.
+## E drinks a litre; Q dumps it all. Water weighs 1 kg per litre, so a full catcher is
+## ballast too: drink it, keep it, or dump it to rise.
 
 const CAPACITY_LITRES := 10.0
 
@@ -22,13 +23,29 @@ func _ready() -> void:
 		_lift.add_weight(Tuning.rain_catcher_weight)
 
 
+func _physics_process(delta: float) -> void:
+	if collision_layer == 0:
+		return  # Cut loose.
+	var storm := get_tree().get_first_node_in_group("storm") as Storm
+	if storm and storm.is_raining():
+		set_water(water + Tuning.rain_fill_per_sec * delta)
+	else:
+		set_water(water + Tuning.mist_fill_per_min / 60.0 * delta)
+
+
 func get_prompt(_player: Player) -> String:
-	if water <= 0.0:
-		return "Rain catcher (empty)"
-	return "Rain catcher: %.1f L\n[E] Dump the water (lose %.0f kg)" % [water, water]
+	if water < Tuning.drink_litres:
+		return "Rain catcher: %.1f L (collecting)" % water
+	return "Rain catcher: %.1f L\n[E] Drink   [Q] Dump it all (lose %.0f kg)" % [water, water]
 
 
-func interact(_player: Player) -> void:
+func interact(player: Player) -> void:
+	if water >= Tuning.drink_litres:
+		set_water(water - Tuning.drink_litres)
+		player.survival.drink(Tuning.drink_amount)
+
+
+func alt_interact(_player: Player) -> void:
 	if water > 0.0:
 		set_water(0.0)
 

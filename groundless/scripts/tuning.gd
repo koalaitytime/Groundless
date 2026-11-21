@@ -87,7 +87,7 @@ extends Node
 @export var flotsam_interval_min := 10.0
 @export var flotsam_interval_max := 18.0
 ## Relative chance of each material.
-@export var flotsam_kind_weights := {"wood": 4.0, "fiber": 2.5, "rope": 2.0, "cloth": 1.5}
+@export var flotsam_kind_weights := {"wood": 4.0, "fiber": 2.5, "rope": 2.0, "cloth": 1.5, "fungus": 1.0}
 ## Chance a piece of material flotsam is a tangled clump of several items. 0 turns clumps off.
 @export_range(0.0, 1.0) var clump_chance := 0.3
 @export var clump_size_min := 2
@@ -189,3 +189,55 @@ extends Node
 @export var mantle_max_height := 1.5
 @export var mantle_time := 0.4
 @export var climb_speed := 2.5
+
+@export_group("Survival")
+## Minutes for a full thirst or hunger bar to run empty.
+@export var thirst_minutes := 12.0
+@export var hunger_minutes := 20.0
+## Health lost per second while thirst or hunger is empty.
+@export var starving_damage := 0.5
+## Health regained per second while neither thirst nor hunger is below this.
+@export var health_regen := 0.5
+@export var health_regen_above := 25.0
+## What one drink or meal gives (out of 100).
+@export var drink_amount := 30.0
+@export var spring_drink_amount := 40.0
+@export var fungus_food := 35.0
+## Litres one drink takes from a rain catcher.
+@export var drink_litres := 1.0
+## Fraction of each carried material lost when you fall off or pass out (Andrew prefers forgiving).
+@export var wake_item_loss := 0.5
+## Thirst, hunger and health you wake up with after passing out.
+@export var wake_stats := 35.0
+
+@export_group("Storm")
+## Seconds until the first storm, and between storms after that.
+@export var storm_first_delay := 480.0
+@export var storm_interval_min := 600.0
+@export var storm_interval_max := 900.0
+## Warning before the rain starts: enough to finish a first roof.
+@export var storm_warning := 90.0
+@export var storm_duration := 75.0
+## Wind speed in a storm, and how far it swings the wind's direction, in degrees.
+@export var storm_drift_speed := 6.0
+@export var storm_wind_turn_degrees := 40.0
+## Health lost per second standing in caustic rain without cover.
+@export var rain_burn := 2.0
+## Gas lost per minute by a pod with no roof over its anchor, and the chance per second the
+## rain eats a hole in it (it becomes damaged and needs a patch).
+@export var rain_pod_gas_per_min := 0.06
+@export var rain_pod_damage_chance := 0.006
+## Litres per second a rain catcher collects in rain, and per minute from passing mist.
+@export var rain_fill_per_sec := 0.15
+@export var mist_fill_per_min := 0.4
+
+@export_group("Pod-leech")
+@export var leech_first_delay := 240.0
+@export var leech_interval_min := 180.0
+@export var leech_interval_max := 300.0
+## Swimming speed relative to the raft, m/s.
+@export var leech_speed := 1.4
+## Gas drained per minute from the pod it latches onto (GDD: 25%).
+@export var leech_drain_per_min := 0.25
+## Hits to kill one. The first knocks it off its pod.
+@export var leech_hits := 2

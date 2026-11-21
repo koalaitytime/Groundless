@@ -47,6 +47,11 @@ func _ready() -> void:
 	_update_visual()
 
 
+## Where the pod itself hangs, in world space.
+func ball_position() -> Vector3:
+	return _ball.global_position if _ball else global_position
+
+
 func get_lift() -> float:
 	return capacity * gas
 
