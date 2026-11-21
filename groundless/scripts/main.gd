@@ -157,6 +157,9 @@ func _prompt_text() -> String:
 					text += "\n%s here: %s" % [info.name, info.problem]
 				else:
 					text += "\n[Right-click] Remove %s (full refund)   [X] Cut loose" % info.name.to_lower()
+			var condition := player.builder.condition_of(player.build_tile)
+			if condition >= 0.0 and condition < 99.5:
+				text += "\n%s worn by rain: %d%%   [Q] Repair (%d wood)" % [player.builder.wear_target(player.build_tile).capitalize(), roundi(condition), Tuning.repair_wood]
 		text += "\n[Tab] Build menu"
 		return text
 	if player.selected_slot == Player.Slot.PADDLE:

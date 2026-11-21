@@ -171,6 +171,36 @@ func _run() -> void:
 	await _ticks(10.0)
 	_check(Wind.storm_strength < 0.1, "the wind settles again")
 
+	print("Rain eats wood")
+	player.items = {"wood": 30, "rope": 10, "cloth": 10, "fiber": 10, "pod": 0, "patch": 0, "sky_paddle": 0, "fungus": 0}
+	build.place("plank", Vector2i(2, 0), player)
+	build.place("plank", Vector2i(3, 0), player)
+	build.place("plank", Vector2i(2, 1), player)
+	build.place("roof", Vector2i(2, 1), player)
+	catcher.set_water(0.0)
+	var weight_before := lift.get_weight()
+	player.global_position = raft.global_transform * Vector3(0, 0.1, 0)
+	s.health = 100.0
+	storm.start_rain()
+	await _ticks(20.0)
+	var open_plank := build.tiles[Vector2i(2, 0)].condition as float
+	var sheltered_plank := build.tiles[Vector2i(2, 1)].condition as float
+	var roof := build.tiles[Vector2i(2, 1)].roof_condition as float
+	_check(absf(100.0 - open_plank - Tuning.rain_plank_wear * 20.0) < 1.0, "an unroofed plank wears in the rain (%.0f%%)" % open_plank)
+	_check(is_equal_approx(sheltered_plank, 100.0), "a plank under a roof doesn't")
+	_check(absf(100.0 - roof - Tuning.rain_roof_wear * 20.0) < 1.0, "the roof wears instead, more slowly (%.0f%%)" % roof)
+	var wood: int = player.items.wood
+	_check(build.repair(Vector2i(2, 0), player) and is_equal_approx(build.tiles[Vector2i(2, 0)].condition, 100.0), "the hammer repairs it to full")
+	_check(player.items.wood == wood - Tuning.repair_wood, "for %d wood" % Tuning.repair_wood)
+	_check(not build.repair(Vector2i(2, 0), player), "nothing to repair on a sound plank")
+	build.tiles[Vector2i(2, 0)].condition = 1.0
+	await _ticks(2.0)
+	_check(not build.has_floor(Vector2i(2, 0)) and not build.has_floor(Vector2i(3, 0)), "a worn-out plank breaks, and the plank beyond it falls too")
+	_check(build.has_floor(Vector2i(2, 1)), "the roofed plank survives")
+	storm.end_storm()
+	catcher.set_water(0.0)
+	_check(lift.get_weight() < weight_before - Tuning.plank_weight * 1.5, "broken planks no longer weigh on the raft")
+
 	print("Pod-leech")
 	# Take the roofs down so the hook has a clear throw.
 	build.cut(build.tile_of(roofed_anchor.position))

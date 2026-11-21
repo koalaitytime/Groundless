@@ -44,7 +44,7 @@ func _ready() -> void:
 
 
 func _empty_tile(floor_value) -> Dictionary:
-	return {"floor": floor_value, "shape": null, "fixture": null, "roof": null, "roof_shape": null}
+	return {"floor": floor_value, "shape": null, "fixture": null, "roof": null, "roof_shape": null, "condition": 100.0, "roof_condition": 100.0}
 
 
 # --- Grid helpers -------------------------------------------------------------------
@@ -191,6 +191,7 @@ func _add_roof(tile: Vector2i) -> void:
 	roof.add_child(Interactable.make_box(top_size, Color(0.55, 0.5, 0.36), Vector3(0, 2.34, 0)))
 	raft.add_child(roof)
 	tiles[tile].roof = roof
+	tiles[tile].roof_condition = 100.0
 	tiles[tile].roof_shape = _add_shape(top_size, tile_centre(tile) + Vector3(0, 2.34, 0))
 	lift.add_weight(Tuning.roof_weight)
 
@@ -429,3 +430,80 @@ func _ghost_mesh(id: String) -> Mesh:
 				box.size = Vector3(0.7, 0.6, 0.7)
 		_ghost_meshes[id] = box
 	return _ghost_meshes[id]
+
+
+# --- Rain wear and repair -----------------------------------------------------------
+
+## Caustic rain eats wood: planks with no roof over them wear fast, roofs wear slower while
+## they shelter what's under them. Worn-out pieces break and fall. Called by the Storm.
+func weather(delta: float) -> void:
+	for tile in tiles.keys():
+		if not tiles.has(tile):
+			continue  # Fell with an earlier piece this tick.
+		var t: Dictionary = tiles[tile]
+		if t.roof != null:
+			t.roof_condition -= Tuning.rain_roof_wear * delta
+			if t.roof_condition <= 0.0:
+				_cut_roof(t)
+				continue
+			_show_wear(t.roof, t.roof_condition)
+		elif t.floor is Node3D:
+			t.condition -= Tuning.rain_plank_wear * delta
+			if t.condition <= 0.0:
+				_cut_plank(tile)
+				_drop_unconnected()
+				continue
+			_show_wear(t.floor, t.condition)
+
+
+## Darken and green a worn piece so the damage shows.
+func _show_wear(node: Node3D, condition: float) -> void:
+	var meshes: Array = [node] if node is MeshInstance3D else node.find_children("*", "MeshInstance3D", true, false)
+	for m in meshes:
+		var mesh := (m as MeshInstance3D).mesh as BoxMesh
+		if mesh == null or mesh.material == null:
+			continue
+		var material := mesh.material as StandardMaterial3D
+		if not material.has_meta("fresh"):
+			material.set_meta("fresh", material.albedo_color)
+		var fresh: Color = material.get_meta("fresh")
+		material.albedo_color = fresh.lerp(Color(0.25, 0.3, 0.18), (1.0 - condition / 100.0) * 0.8)
+
+
+## The top-most wooden piece on a tile that rain can wear: "roof", "plank" or "".
+func wear_target(tile: Vector2i) -> String:
+	if not tiles.has(tile):
+		return ""
+	if tiles[tile].roof != null:
+		return "roof"
+	if tiles[tile].floor is Node3D:
+		return "plank"
+	return ""
+
+
+## Condition (0 to 100) of the top-most wooden piece on a tile, or -1.
+func condition_of(tile: Vector2i) -> float:
+	match wear_target(tile):
+		"roof":
+			return tiles[tile].roof_condition
+		"plank":
+			return tiles[tile].condition
+	return -1.0
+
+
+## Repair the top-most wooden piece on a tile back to full, for Tuning.repair_wood wood.
+func repair(tile: Vector2i, player: Player) -> bool:
+	var what := wear_target(tile)
+	if what == "" or condition_of(tile) >= 99.5:
+		return false
+	if not player.has_items({"wood": Tuning.repair_wood}):
+		return false
+	player.spend_items({"wood": Tuning.repair_wood})
+	var t: Dictionary = tiles[tile]
+	if what == "roof":
+		t.roof_condition = 100.0
+		_show_wear(t.roof, 100.0)
+	else:
+		t.condition = 100.0
+		_show_wear(t.floor, 100.0)
+	return true

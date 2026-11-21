@@ -33,7 +33,7 @@ A floating-raft survival game in Godot 4.7 (GDScript, Forward+, Jolt Physics). T
 - **Anchoring** is `RaftAnchor` (the raft's `Anchor` child): the hook hitting an `Island` anchors; the raft is moored: reeled to `anchor_gap` from the lip, hauled level with the lip whatever its lift (in `RaftLift`), and held still (no bob or sway) so the player walks across; `AnchorCleat` casts off and lift takes over again. `Tuning.leak_while_anchored` is on trial.
 - **Boarding:** Space at a ledge 0.6 to 1.5 m above the feet mantles (code-driven); `Ladder` volumes (hangroot) are climbable.
 - **Survival** is `Survival` (the player's `Survival` child): thirst, hunger, health; `black_out()` fades, drops `wake_item_loss` of carried materials and wakes the player on the raft (falling off and health 0 both use it).
-- **Storm** is the `Storm` node (group `storm`): clear, warning, rain. Rain burns the player without cover overhead (ray up), drains pods whose anchor tile has no roof, fills rain catchers, and sets `Wind.storm_strength`. Blacking out ends the rain.
+- **Storm** is the `Storm` node (group `storm`): clear, warning, rain. Rain burns the player without cover overhead (ray up), drains pods whose anchor tile has no roof, fills rain catchers, wears wood (`RaftBuilder.weather()`: unroofed planks fast, roofs slower; worn-out pieces break), and sets `Wind.storm_strength`. Blacking out ends the rain.
 - **Pod-leech** is `PodLeech` (layer 2, spawned by `LeechSpawner`, the `Leeches` node): swims to a pod, latches and drains it; `hit()` from the hook or E knocks it off, `Tuning.leech_hits` pop it.
 - Build work happens locally on Andrew's PC, never in the cloud.
 
@@ -66,7 +66,7 @@ Defined in `project.godot` (physical keys):
 | `move_forward` / `move_back` / `move_left` / `move_right` | W / S / A / D |
 | `jump` | Space (also mantles onto a ledge 0.6 to 1.5 m up, and climbs hangroot) |
 | `interact` | E (use things; grab flotsam within reach; tear off a pod-leech) |
-| `interact_alt` | Q (second action, e.g. dump a rain catcher) |
+| `interact_alt` | Q (second action: dump a rain catcher; with the hammer, repair a rain-worn plank or roof) |
 | `eat` | F (eat a shelf fungus) |
 | `hotbar_1` … `hotbar_9` | 1 … 9 |
 | `hotbar_next` / `hotbar_prev` | Mouse wheel down / up |

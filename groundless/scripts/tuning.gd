@@ -241,3 +241,12 @@ extends Node
 @export var leech_drain_per_min := 0.25
 ## Hits to kill one. The first knocks it off its pod.
 @export var leech_hits := 2
+
+@export_group("Rain and wood")
+## Condition (out of 100) a plank with no roof over it loses per second of caustic rain.
+## A full storm takes about 60, so an unroofed plank survives one storm but not two.
+@export var rain_plank_wear := 0.8
+## Roofs take the rain for what's under them, wearing at this rate instead.
+@export var rain_roof_wear := 0.4
+## Wood one repair costs (it restores the piece to full condition).
+@export var repair_wood := 1

@@ -6,6 +6,7 @@ extends Node3D
 ##  - it burns the player anywhere without cover overhead
 ##  - it eats at pods whose anchor tile has no roof (gas loss, sometimes a hole to patch)
 ##  - it fills rain catchers fast
+##  - it eats wood: unroofed planks wear fast, roofs slower (see RaftBuilder.weather)
 ## A blackout (passing out) ends the storm early, so it can't burn you twice.
 ## Node in the main scene, in the "storm" group.
 
@@ -98,6 +99,7 @@ func _rain_effects(delta: float) -> void:
 	var lift := raft.get_node_or_null("Lift") as RaftLift
 	if build == null or lift == null:
 		return
+	build.weather(delta)
 	for anchor in raft.find_children("*", "AnchorPoint", true, false):
 		var pod: TetheredPod = anchor.pod
 		if pod == null:

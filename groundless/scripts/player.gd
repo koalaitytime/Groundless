@@ -117,6 +117,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		focused_leech.hit()
 	elif event.is_action_pressed("interact") and focused_flotsam:
 		grab_flotsam()
+	elif event.is_action_pressed("interact_alt") and selected_slot == Slot.HAMMER and builder and build_tile != null and builder.condition_of(build_tile) >= 0.0:
+		builder.repair(build_tile, self)
 	elif event.is_action_pressed("interact_alt") and focused:
 		focused.alt_interact(self)
 	elif event.is_action_pressed("eat"):
