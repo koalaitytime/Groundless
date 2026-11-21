@@ -164,12 +164,18 @@ extends Node
 @export var island_reveal_near := 90.0
 
 @export_group("Anchoring")
-## Anchor rope length: the raft stays within this distance above or below the anchor.
-@export var anchor_rope_length := 15.0
+## Mooring (after the milestone 4 playtest): once anchored, the rope hauls the raft level
+## with the island's lip and holds it there whatever the pods are doing, so the player can
+## walk straight across. Lift only matters again after casting off.
 ## How fast the raft is reeled toward the island, m/s.
 @export var anchor_reel_speed := 1.5
-## Gap left between the raft's nearest edge and the island's lip, in metres.
-@export var anchor_gap := 1.0
+## Gap left between the raft's nearest edge and the island's lip, in metres. Small enough
+## to step across.
+@export var anchor_gap := 0.2
+## Seconds: how quickly a moored raft is hauled to the lip's height (time constant).
+@export var moor_height_time := 2.0
+## Fastest a moored raft is hauled up or down, m/s.
+@export var moor_vertical_speed := 2.5
 ## Leaking while anchored: true = pods keep leaking, but only at the healthy rate (even
 ## damaged ones); false = no leaking while anchored. Andrew is trying this out.
 @export var leak_while_anchored := true

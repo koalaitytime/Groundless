@@ -1,9 +1,10 @@
 class_name RaftAnchor
 extends Node
-## Anchoring to an island (GDD "Anchoring"). Throw the hook into an island and its rope ties
+## Anchoring to an island (GDD "Anchoring"). Throw the hook into an island and its rope moors
 ## the raft there: the raft is reeled in until its nearest edge is Tuning.anchor_gap from the
-## island's lip, then held. The rope keeps the raft within Tuning.anchor_rope_length above or
-## below the anchor point (see RaftLift). A cleat appears on the raft's edge: E casts off.
+## island's lip and hauled level with the lip (see RaftLift), then held still, so the player
+## can walk straight across. A cleat appears on the raft's edge: E casts off, and the raft
+## goes back to the resting height its lift gives.
 ## Child of the Raft, named "Anchor".
 
 signal anchored(island: Island)

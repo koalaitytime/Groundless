@@ -30,7 +30,7 @@ A floating-raft survival game in Godot 4.7 (GDScript, Forward+, Jolt Physics). T
 - **Physics layers:** 1 world, 2 flotsam (drift-pods and material bundles, hit by the hook), 3 interact (`Interactable` areas the look ray finds).
 - **Building** is `RaftBuilder` (the raft's `Build` child): a grid of `Tuning.tile_size` tiles in raft-local X/Z; the slab is tiles -1..1. Plank and roof collision shapes go directly on the raft body. Recipes live in `Tuning.recipes`. Built pieces that weigh something remove their own weight in `on_cut()`.
 - **Islands** are `Island` (StaticBody3D, grey-box built in code from `kind`; origin = centre of the lip, top at Y 0) placed by `IslandSpawner` (the `Islands` node, in the `recentre` group) in a fixed order: pod grove, weeping rock, wreck. Every island mesh uses `shaders/island_reveal.gdshader` with an instance `reveal` uniform. The raft is kept out of islands by `Raft._keep_clear_of_islands()`.
-- **Anchoring** is `RaftAnchor` (the raft's `Anchor` child): the hook hitting an `Island` anchors; the raft is reeled to `anchor_gap` from the lip and held; the rope limits height (in `RaftLift`); `AnchorCleat` casts off. `Tuning.leak_while_anchored` is on trial.
+- **Anchoring** is `RaftAnchor` (the raft's `Anchor` child): the hook hitting an `Island` anchors; the raft is moored: reeled to `anchor_gap` from the lip, hauled level with the lip whatever its lift (in `RaftLift`), and held still (no bob or sway) so the player walks across; `AnchorCleat` casts off and lift takes over again. `Tuning.leak_while_anchored` is on trial.
 - **Boarding:** Space at a ledge 0.6 to 1.5 m above the feet mantles (code-driven); `Ladder` volumes (hangroot) are climbable.
 - Build work happens locally on Andrew's PC, never in the cloud.
 

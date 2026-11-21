@@ -86,9 +86,5 @@ func _physics_process(delta: float) -> void:
 	if not anchored or Tuning.leak_while_anchored:
 		for pod in pods():
 			pod.leak(delta, murk_extra, anchored)
-	var target := get_resting_height()
-	if anchored:
-		# The anchor rope holds the raft within its length of the anchor point.
-		var a := anchor.anchor_position().y
-		target = clampf(target, a - Tuning.anchor_rope_length, a + Tuning.anchor_rope_length)
-	raft.target_height = target
+	# Moored: the rope holds the deck level with the island's lip, whatever the lift.
+	raft.target_height = anchor.island.global_position.y if anchored else get_resting_height()

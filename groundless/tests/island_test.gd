@@ -122,17 +122,38 @@ func _run() -> void:
 	lift.process_mode = Node.PROCESS_MODE_INHERIT
 	await _ticks(25.0)
 	var gap := anchor.edge_gap()
-	_check(absf(gap - Tuning.anchor_gap) < 0.35, "the raft is reeled in until its edge is about 1 m from the lip (%.2f m)" % gap)
+	_check(absf(gap - Tuning.anchor_gap) < 0.35, "the raft is reeled in until its edge is anchor_gap from the lip (%.2f m)" % gap)
 	_check(_flat(raft.get_horizontal_velocity()).length() < 0.2, "and held there (%.2f m/s)" % _flat(raft.get_horizontal_velocity()).length())
 
-	print("Anchor rope limits height")
+	print("Moored level with the lip")
 	for pod in lift.pods():
 		pod.gas = 0.0
-	await _ticks(25.0)
-	var below := anchor.anchor_position().y - raft.get_base_height()
-	_check(below <= Tuning.anchor_rope_length + 0.5, "with no lift the rope holds the raft %.1f m below the anchor (max %.0f)" % [below, Tuning.anchor_rope_length])
+	await _ticks(12.0)
+	var level := raft.global_position.y - first.global_position.y
+	_check(absf(level) < 0.1, "with no lift at all, the rope holds the deck level with the lip (%+.2f m)" % level)
+	var basis_tilt := raft.global_basis.y.angle_to(Vector3.UP)
+	_check(rad_to_deg(basis_tilt) < 0.2, "a moored raft stops bobbing and swaying (tilt %.2f deg)" % rad_to_deg(basis_tilt))
 	for pod in lift.pods():
 		pod.gas = 1.0
+	await _ticks(3.0)
+	_check(absf(raft.global_position.y - first.global_position.y) < 0.1, "and refilled pods don't lift it off the lip either")
+
+	print("Walk straight across")
+	var toward_island := _flat(first.global_position - raft.global_position).normalized()
+	var edge := (raft.get_node("Build") as RaftBuilder).extent_along(raft.global_basis.inverse() * toward_island)
+	player.global_position = raft.global_position + toward_island * (edge - 0.8) + Vector3.UP * 0.1
+	player.velocity = Vector3.ZERO
+	await _ticks(0.3)
+	_face(first.global_position)
+	player.input_override = Vector2(0, -1)
+	await _ticks(1.5)
+	player.input_override = Vector2.ZERO
+	await _ticks(0.5)
+	var feet := player.global_position.y - first.global_position.y
+	_check(player.is_on_floor() and player.ride_body == null and absf(feet) < 0.1, "the player walks from the deck onto the island without jumping (feet %+.2f m)" % feet)
+	_check(first.visited, "and that counts as visiting it")
+	player.global_position = raft.global_transform * Vector3(0, 0.1, 0)
+	await _ticks(0.5)
 
 	print("Leaking while anchored")
 	Tuning.leak_healthy_per_min = 0.02
@@ -164,7 +185,7 @@ func _run() -> void:
 	await _ticks(0.5)
 	var on_island := player.is_on_floor() and absf(player.global_position.y - first.global_position.y) < 0.3
 	_check(on_island, "jumping at a 1.2 m ledge mantles onto the island (feet %+.2f m from lip)" % (player.global_position.y - first.global_position.y))
-	_check(first.visited and islands.sequence_index == 1, "standing on it counts as visiting the pod grove")
+	_check(islands.sequence_index == 1, "visiting the pod grove moves the sequence on")
 
 	print("Gather on the island")
 	var pod_node: ResourceNode = null

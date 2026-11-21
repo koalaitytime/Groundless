@@ -58,6 +58,8 @@ func _ready() -> void:
 	raft.get_node("Lift").process_mode = Node.PROCESS_MODE_DISABLED
 	raft.target_height = 85.0
 	add_child(main)
+	# No islands: this test is about riding the raft in open sky.
+	main.get_node("Islands").process_mode = Node.PROCESS_MODE_DISABLED
 	_next_phase()
 
 

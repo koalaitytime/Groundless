@@ -23,6 +23,8 @@ var velocity := Vector3.ZERO
 var anchor_velocity: Variant = null
 
 var _time := 0.0
+## 0 = free in the wind, 1 = moored and still (no bob, sway or wandering turn).
+var _calm := 0.0
 var _paddle_target := Vector3.ZERO
 var _paddle_velocity := Vector3.ZERO
 var _base_position := Vector3.ZERO
@@ -53,11 +55,16 @@ func _physics_process(delta: float) -> void:
 		horizontal = horizontal.lerp(wind, 1.0 - exp(-drift_response * delta))
 
 	# Vertical: vy target = clamp((target - y) / T, -max_sink, +max_rise), smoothed.
+	# While moored the rope hauls the raft to the lip's height faster.
+	var moored := anchor_velocity != null
 	var desired_vy := clampf(
 		(target_height - _base_position.y) / Tuning.height_time_constant,
 		-Tuning.max_sink_speed,
 		Tuning.max_rise_speed
 	)
+	if moored:
+		desired_vy = clampf((target_height - _base_position.y) / Tuning.moor_height_time, -Tuning.moor_vertical_speed, Tuning.moor_vertical_speed)
+	_calm = move_toward(_calm, 1.0 if moored else 0.0, delta * 0.5)
 	var vy := lerpf(velocity.y, desired_vy, 1.0 - exp(-Tuning.vertical_smoothing * delta))
 	velocity = Vector3(horizontal.x, vy, horizontal.z)
 	_paddle_velocity = _paddle_velocity.lerp(_paddle_target, 1.0 - exp(-2.0 * delta))
@@ -65,10 +72,11 @@ func _physics_process(delta: float) -> void:
 	_base_position += (velocity + _paddle_velocity) * delta
 	_keep_clear_of_islands()
 
-	_yaw += deg_to_rad(turn_degrees_per_second) * sin(_time * 0.05) * delta
+	var motion := 1.0 - _calm
+	_yaw += deg_to_rad(turn_degrees_per_second) * sin(_time * 0.05) * delta * motion
 
-	var bob := sin(_time * TAU / bob_period) * bob_height
-	var sway := deg_to_rad(sway_degrees)
+	var bob := sin(_time * TAU / bob_period) * bob_height * motion
+	var sway := deg_to_rad(sway_degrees) * motion
 	var pitch := sway * sin(_time * TAU / 7.3)
 	var roll := sway * sin(_time * TAU / 9.1 + 0.7)
 	global_transform = Transform3D(
